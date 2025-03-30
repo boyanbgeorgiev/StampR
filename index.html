@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timestamp Vault – Удостоверяване</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Navigation -->
+<header class="header">
+  <nav class="nav">
+    <button class="active">Времево удостоверяване</button>
+    <a href="/hash_search.html"><button>Проверка оригинал</button></a>
+    <button>За нас</button>
+    <div id="userGreeting" style="margin-left: 20px;"></div>
+  </nav>
+  
+</header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Timestamp Vault</h1>
+      <p>Кратко описание за услугата. Кратко описание за услугата.</p>
+    </div>
+    <div class="hero-icon">
+      <img src="timestamp.svg" alt="Икона на печат" />
+    </div>
+  </section>
+
+  <!-- Upload -->
+ <!-- Upload Section -->
+<section class="upload-section">
+  <h2><span class="emoji">🧾</span> Времево удостоверение</h2>
+
+  <div class="layout-wrapper">
+    <!-- Upload Box -->
+    <div class="upload-card justify-center">
+      <div class="upload-box original" data-label="Оригинал">
+        <div class="file-input-wrapper">
+          <label for="fileInput">Качи оригинал</label>
+          <span id="fileName">Няма избран</span>
+          <input type="file" id="fileInput">
+        </div>
+        <button id="uploadButton">Удостовери</button>
+      </div>
+    </div>
+
+    <!-- Status Info -->
+    <div id="status" class="status-info"></div>
+
+    <!-- Result Card -->
+    <div id="timestampResult" class="result-card hidden">
+      <h3>Резултат</h3>
+
+      <div class="result-row">
+        <label>Timestamp</label>
+        <div class="result-value copy-wrap">
+          <span id="resultTimestamp"></span>
+          <button class="copy-btn" data-copy="resultTimestamp" title="Копирай">📋</button>
+        </div>
+      </div>
+
+      <div class="result-row">
+        <label>HASH number</label>
+        <div class="result-value copy-wrap">
+          <span id="resultHash" class="mono"></span>
+          <button class="copy-btn" data-copy="resultHash" title="Копирай">📋</button>
+        </div>
+      </div>
+
+      <div class="result-row">
+        <label>Serial number</label>
+        <div class="result-value copy-wrap">
+          <span id="resultSerial"></span>
+          <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
+        </div>
+      </div>
+
+      <button class="send-button">📤 Изпрати</button>
+    </div>
+  </div>
+</section>
+
+
+  <script src="script.js"></script>
+</body>
+</html>

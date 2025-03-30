@@ -1,0 +1,380 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* BASE */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f7fb;
+  color: #222;
+  padding: 20px;
+}
+
+/* HEADER NAVIGATION */
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.nav {
+  display: inline-flex;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.nav button {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav button:hover,
+.nav button.active {
+  background-color: #f0f4ff;
+  color: #1f66e0;
+}
+
+/* HERO SECTION */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 50px 40px;
+  border-radius: 16px;
+  margin-bottom: 40px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+}
+
+.hero-text h1 {
+  font-size: 36px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.hero-text p {
+  font-size: 18px;
+  color: #666;
+}
+
+.hero-icon img {
+  max-width: 120px;
+}
+
+/* UPLOAD SECTION */
+.upload-section {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* Section title (blue bar) */
+.upload-section h2 {
+  background: linear-gradient(90deg, #4d8df6, #7dbff0);
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Upload container */
+.upload-card {
+  display: flex;
+  justify-content: space-around;
+  padding: 40px 20px;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: #f9fbff;
+}
+
+/* Individual card box */
+.upload-box {
+  background: white;
+  border-radius: 12px;
+  padding: 25px 20px;
+  flex: 1;
+  min-width: 280px;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Top label in card */
+.upload-box::before {
+  content: attr(data-label);
+  text-align: center;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.upload-box.original::before {
+  background: #e6edff;
+  color: #1f3f94;
+}
+
+.upload-box.serial::before {
+  background: #fff8d9;
+  color: #997d00;
+}
+
+.upload-box.hash::before {
+  background: #e1f1e1;
+  color: #236c23;
+}
+
+/* File input field (with label and preview) */
+.file-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  background: #fafafa;
+}
+
+.file-input-wrapper label {
+  background: #eee;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.file-input-wrapper span {
+  color: #555;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Text fields */
+.upload-box input[type="text"] {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+}
+
+/* Buttons */
+.upload-box button {
+  background-color: #4d8df6;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.upload-box button:hover {
+  background-color: #2a6ee0;
+}
+/* Adjust gradient icon header */
+.upload-section h2 .emoji {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
+/* Centered upload card */
+.justify-center {
+  justify-content: center;
+}
+
+/* Result Card */
+/* RESULT CARD - Clean Inline Style */
+.result-card {
+  background: white;
+  margin: 40px auto 0;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  max-width: 1100px;
+  width: 100%;
+}
+
+.result-card * {
+  text-align: left;
+}
+
+
+.result-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2b41;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e6f0; /* 👈 underline */
+  padding-bottom: 8px;
+}
+
+
+.result-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2b41;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e6f0; /* 👈 underline */
+  padding-bottom: 8px;
+}
+
+
+.result-row {
+  margin-bottom: 20px;
+}
+
+.result-row label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.result-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 14px;
+  color: #1d1d1f;
+  word-break: break-word;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.result-value span {
+  display: inline-block;
+  white-space: break-spaces;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  color: #555;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.copy-btn:hover {
+  color: #000;
+}
+
+
+.send-button {
+  margin-top: 24px;
+  background-color: #1a4ed8;
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.send-button:hover {
+  background-color: #1441c4;
+}
+
+
+.hidden {
+  display: none !important;
+  visibility: hidden;
+  opacity: 0;
+}
+/* AUTH FORMS: Login & Signup */
+.auth-container {
+  max-width: 400px;
+  margin: 60px auto;
+  background: #fff;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.auth-container h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 24px;
+  color: #1f2b41;
+}
+
+.auth-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-container input[type="text"],
+.auth-container input[type="password"] {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.auth-container button {
+  background-color: #4d8df6;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.auth-container button:hover {
+  background-color: #2a6ee0;
+}
+
+.auth-container .message {
+  text-align: center;
+  font-size: 14px;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.auth-container .message.error {
+  background-color: #ffe4e4;
+  color: #b60000;
+}
+
+.auth-container .message.success {
+  background-color: #e4ffe8;
+  color: #1f7d32;
+}

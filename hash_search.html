@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="bg">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timestamp Vault - Проверка</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <!-- Navigation -->
+  <header class="header">
+    <nav class="nav">
+      <a href="/index.html"><button>Времево удостоверяване</button></a>
+      <button class="active">Проверка оригинал</button>
+      <button>За нас</button>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Timestamp Vault</h1>
+      <p>Кратко описание за услугата. Кратко описание за услугата.</p>
+    </div>
+    <div class="hero-icon">
+      <img src="timestamp.svg" alt="Икона на печат" />
+    </div>
+  </section>
+
+  <!-- Upload/Search Section -->
+  <!-- Upload/Search Section -->
+<section class="upload-section">
+  <h2>Проверка оригинал</h2>
+
+  <!-- Wrapper for both upload and result -->
+  <div class="layout-wrapper">
+
+    <div class="upload-card">
+      <!-- Original -->
+      <div class="upload-box original" data-label="Оригинал">
+        <div class="file-input-wrapper">
+          <label for="fileInput">Качи оригинал</label>
+          <span id="fileName">Няма избран</span>
+          <input type="file" id="fileInput" />
+        </div>
+        <button id="hashButton">Генерирай хеш</button>
+        <p id="hashStatus" class="status"></p>
+      </div>
+
+      <!-- Serial -->
+      <div class="upload-box serial" data-label="Сериен номер">
+        <input type="text" id="serialInput" placeholder="Въведи сериен номер" />
+        <button id="searchSerialButton">Проверка</button>
+        <p id="serialStatus" class="status"></p>
+      </div>
+
+      <!-- Hash -->
+      <div class="upload-box hash" data-label="HASH">
+        <input type="text" id="hashInput" placeholder="Въведете Хеш на файла (SHA–256)" />
+        <button id="searchHashButton">Проверка</button>
+      </div>
+    </div>
+
+    <!-- Стилизирана карта за резултат -->
+    <div id="timestampResult" class="result-card hidden">
+      <h3>Резултат</h3>
+
+      <div class="result-row">
+        <label>Timestamp</label>
+        <div class="result-value copy-wrap">
+          <span id="resultTimestamp"></span>
+          <button class="copy-btn" data-copy="resultTimestamp" title="Копирай">📋</button>
+        </div>
+      </div>
+
+      <div class="result-row">
+        <label>HASH number</label>
+        <div class="result-value copy-wrap">
+          <span id="resultHash"></span>
+          <button class="copy-btn" data-copy="resultHash" title="Копирай">📋</button>
+        </div>
+      </div>
+
+      <div class="result-row">
+        <label>Serial number</label>
+        <div class="result-value copy-wrap">
+          <span id="resultSerial"></span>
+          <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
+        </div>
+      </div>
+
+      <button class="send-button">📤 Изпрати</button>
+    </div>
+  </div>
+</section>
+
+
+  <script src="hash_search.js"></script>
+</body>
+
+</html>

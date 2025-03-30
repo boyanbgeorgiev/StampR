@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="auth-container">
+    <h2>Login</h2>
+
+    <div id="message"></div>
+
+    <form method="POST" action="login.php">
+      <input type="text" name="username" placeholder="Username" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+
+    <p style="text-align: center; margin-top: 20px">
+      Don't have an account?
+      <a href="signup.html">Sign up here</a>
+    </p>
+  </div>
+
+  <script>
+    const msg = decodeURIComponent(document.cookie.replace(/(?:(?:^|.*;\s*)form_message\s*\=\s*([^;]*).*$)|^.*$/, "$1"));
+    if (msg) {
+      const div = document.getElementById("message");
+      div.innerHTML = msg;
+      document.cookie = "form_message=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    }
+  </script>
+</body>
+</html>
