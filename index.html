@@ -104,13 +104,13 @@
       if (!toggle || !menu) return;
 
       if (loggedIn && username) {
-        toggle.innerHTML = `👋 Здравей, ${username} ▾`;
+        toggle.innerHTML = `Здравей, ${username} ▾`;
         menu.innerHTML = `
-          <a href="account.php">Моят профил</a>
+          <a href="account.html">Моят профил</a>
           <a href="logout.php">Изход</a>
         `;
       } else {
-        toggle.innerHTML = "👤 Акаунт ▾";
+        toggle.innerHTML = "Акаунт ▾";
         menu.innerHTML = `
           <a href="login.html">Вход</a>
           <a href="signup.html">Регистрация</a>

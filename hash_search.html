@@ -16,6 +16,12 @@
       <a href="/index.html"><button>Времево удостоверяване</button></a>
       <button class="active">Проверка оригинал</button>
       <button>За нас</button>
+      <div class="dropdown" id="userDropdown">
+        <button id="dropdownToggle">👤 Акаунт ▾</button>
+        <div class="dropdown-menu" id="dropdownMenu">
+          <!-- JS injects menu -->
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -99,6 +105,47 @@
 
 
   <script src="hash_search.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      function getCookie(name) {
+        const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+        return match ? decodeURIComponent(match[2]) : null;
+      }
+
+      const loggedIn = getCookie("loggedin") === "1";
+      const username = getCookie("username");
+      const toggle = document.getElementById("dropdownToggle");
+      const menu = document.getElementById("dropdownMenu");
+
+      if (!toggle || !menu) return;
+
+      if (loggedIn && username) {
+        toggle.innerHTML = `Здравей, ${username} ▾`;
+        menu.innerHTML = `
+          <a href="account.html">Моят профил</a>
+          <a href="logout.php">Изход</a>
+        `;
+      } else {
+        toggle.innerHTML = "Акаунт ▾";
+        menu.innerHTML = `
+          <a href="login.html">Вход</a>
+          <a href="signup.html">Регистрация</a>
+        `;
+      }
+
+      toggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("show");
+      });
+
+      document.addEventListener("click", (e) => {
+        const dropdown = document.getElementById("userDropdown");
+        if (!dropdown.contains(e.target)) {
+          menu.classList.remove("show");
+        }
+      });
+    });
+  </script>
 </body>
 
 </html>
