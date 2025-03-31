@@ -13,27 +13,33 @@ body {
   padding: 20px;
 }
 
-/* HEADER NAVIGATION */
+/* === HEADER NAVIGATION === */
 .header {
-  text-align: center;
   margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
 }
 
 .nav {
-  display: inline-flex;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 12px;
-  overflow: hidden;
+  padding: 8px 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  max-width: fit-content;
 }
 
 .nav button {
   background: none;
   border: none;
-  padding: 12px 20px;
+  padding: 10px 18px;
   font-weight: 500;
+  font-size: 14px;
   cursor: pointer;
+  border-radius: 8px;
   transition: all 0.2s ease;
 }
 
@@ -41,6 +47,57 @@ body {
 .nav button.active {
   background-color: #f0f4ff;
   color: #1f66e0;
+}
+
+/* === DROPDOWN === */
+.dropdown {
+  position: relative;
+}
+
+.dropdown button {
+  background: none;
+  border: none;
+  padding: 10px 18px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.dropdown button:hover {
+  background-color: #f0f4ff;
+  color: #1f66e0;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  min-width: 160px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  z-index: 100;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-menu a {
+  display: block;
+  padding: 10px 16px;
+  color: #222;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.dropdown-menu a:hover {
+  background-color: #f0f0f5;
 }
 
 /* HERO SECTION */
@@ -80,7 +137,6 @@ body {
   overflow: hidden;
 }
 
-/* Section title (blue bar) */
 .upload-section h2 {
   background: linear-gradient(90deg, #4d8df6, #7dbff0);
   color: white;
@@ -92,7 +148,11 @@ body {
   gap: 10px;
 }
 
-/* Upload container */
+.upload-section h2 .emoji {
+  font-size: 20px;
+  margin-right: 8px;
+}
+
 .upload-card {
   display: flex;
   justify-content: space-around;
@@ -102,7 +162,6 @@ body {
   background: #f9fbff;
 }
 
-/* Individual card box */
 .upload-box {
   background: white;
   border-radius: 12px;
@@ -117,7 +176,6 @@ body {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
-/* Top label in card */
 .upload-box::before {
   content: attr(data-label);
   text-align: center;
@@ -143,7 +201,6 @@ body {
   color: #236c23;
 }
 
-/* File input field (with label and preview) */
 .file-input-wrapper {
   display: flex;
   align-items: center;
@@ -174,7 +231,6 @@ input[type="file"] {
   text-overflow: ellipsis;
 }
 
-/* Text fields */
 .upload-box input[type="text"] {
   padding: 10px;
   border: 1px solid #ddd;
@@ -183,7 +239,6 @@ input[type="file"] {
   width: 100%;
 }
 
-/* Buttons */
 .upload-box button {
   background-color: #4d8df6;
   color: white;
@@ -198,19 +253,12 @@ input[type="file"] {
 .upload-box button:hover {
   background-color: #2a6ee0;
 }
-/* Adjust gradient icon header */
-.upload-section h2 .emoji {
-  font-size: 20px;
-  margin-right: 8px;
-}
 
-/* Centered upload card */
 .justify-center {
   justify-content: center;
 }
 
-/* Result Card */
-/* RESULT CARD - Clean Inline Style */
+/* RESULT CARD */
 .result-card {
   background: white;
   margin: 40px auto 0;
@@ -225,26 +273,14 @@ input[type="file"] {
   text-align: left;
 }
 
-
 .result-card h3 {
   font-size: 16px;
   font-weight: 600;
   color: #1f2b41;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e0e6f0; /* 👈 underline */
+  border-bottom: 1px solid #e0e6f0;
   padding-bottom: 8px;
 }
-
-
-.result-card h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2b41;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #e0e6f0; /* 👈 underline */
-  padding-bottom: 8px;
-}
-
 
 .result-row {
   margin-bottom: 20px;
@@ -266,9 +302,6 @@ input[type="file"] {
   font-size: 14px;
   color: #1d1d1f;
   word-break: break-word;
-  padding: 0;
-  border: none;
-  background: transparent;
 }
 
 .result-value span {
@@ -293,7 +326,6 @@ input[type="file"] {
   color: #000;
 }
 
-
 .send-button {
   margin-top: 24px;
   background-color: #1a4ed8;
@@ -310,13 +342,7 @@ input[type="file"] {
   background-color: #1441c4;
 }
 
-
-.hidden {
-  display: none !important;
-  visibility: hidden;
-  opacity: 0;
-}
-/* AUTH FORMS: Login & Signup */
+/* === AUTH CONTAINERS === */
 .auth-container {
   max-width: 400px;
   margin: 60px auto;
@@ -362,19 +388,30 @@ input[type="file"] {
   background-color: #2a6ee0;
 }
 
+/* === FORM MESSAGES === */
+.message,
 .auth-container .message {
   text-align: center;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-bottom: 20px;
   font-size: 14px;
-  padding: 10px;
-  border-radius: 6px;
 }
 
+.message.error,
 .auth-container .message.error {
   background-color: #ffe4e4;
-  color: #b60000;
+  color: #b30000;
 }
 
+.message.success,
 .auth-container .message.success {
-  background-color: #e4ffe8;
-  color: #1f7d32;
+  background-color: #e2ffe7;
+  color: #157c33;
+}
+
+/* === UTILITY === */
+.hidden {
+  display: none;
 }

@@ -4,16 +4,19 @@
   <meta charset="UTF-8" />
   <title>Signup</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
   <div class="auth-container">
     <h2>Signup</h2>
 
-    <div id="message"></div>
+    <div id="message" class="message hidden"></div>
+
 
     <form method="POST" action="signup.php">
       <input type="text" name="username" placeholder="Username" required />
       <input type="password" name="password" placeholder="Password" required />
+      <div class="g-recaptcha" data-sitekey="6LdguQQrAAAAAGpftJEG4h_lhUjXK_AbBFFpemt-"></div>
       <button type="submit">Signup</button>
     </form>
 
@@ -24,12 +27,33 @@
   </div>
 
   <script>
-    const msg = decodeURIComponent(document.cookie.replace(/(?:(?:^|.*;\s*)form_message\s*\=\s*([^;]*).*$)|^.*$/, "$1"));
-    if (msg) {
-      const div = document.getElementById("message");
-      div.innerHTML = msg;
+    function getCookie(name) {
+      const cookies = document.cookie.split('; ');
+      for (let c of cookies) {
+        const [key, val] = c.split('=');
+        if (key === name) return val ? decodeURIComponent(val) : null;
+      }
+      return null;
+    }
+  
+    const message = getCookie("form_message");
+    const type = getCookie("form_type");
+  
+    if (message) {
+      const box = document.getElementById("message");
+      box.textContent = message;
+      box.classList.remove("hidden");
+      box.classList.add(type === "success" ? "success" : "error");
+  
+      // Clear cookies
       document.cookie = "form_message=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "form_type=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     }
   </script>
+  
+  
+  
+  
+  
 </body>
 </html>

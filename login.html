@@ -9,11 +9,17 @@
   <div class="auth-container">
     <h2>Login</h2>
 
-    <div id="message"></div>
+    <div id="message" class="message hidden"></div>
 
     <form method="POST" action="login.php">
       <input type="text" name="username" placeholder="Username" required />
       <input type="password" name="password" placeholder="Password" required />
+
+      <label style="display: flex; align-items: center; gap: 8px; margin: 10px 0;">
+        <input type="checkbox" name="remember" />
+        Remember Me
+      </label>
+
       <button type="submit">Login</button>
     </form>
 
@@ -24,11 +30,23 @@
   </div>
 
   <script>
-    const msg = decodeURIComponent(document.cookie.replace(/(?:(?:^|.*;\s*)form_message\s*\=\s*([^;]*).*$)|^.*$/, "$1"));
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2].replace(/\+/g, ' ')) : null;
+    }
+
+    const msg = getCookie("form_message");
+    const type = getCookie("form_type");
+
     if (msg) {
       const div = document.getElementById("message");
-      div.innerHTML = msg;
+      div.textContent = msg;
+      div.classList.remove("hidden");
+      div.classList.add(type === "success" ? "success" : "error");
+
+      // Clear cookies
       document.cookie = "form_message=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "form_type=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     }
   </script>
 </body>
