@@ -9,7 +9,6 @@
 </head>
 
 <body>
-
   <!-- Navigation -->
   <header class="header">
     <nav class="nav">
@@ -18,9 +17,7 @@
       <button>За нас</button>
       <div class="dropdown" id="userDropdown">
         <button id="dropdownToggle">👤 Акаунт ▾</button>
-        <div class="dropdown-menu" id="dropdownMenu">
-          <!-- JS injects menu -->
-        </div>
+        <div class="dropdown-menu" id="dropdownMenu"></div>
       </div>
     </nav>
   </header>
@@ -37,73 +34,70 @@
   </section>
 
   <!-- Upload/Search Section -->
-  <!-- Upload/Search Section -->
-<section class="upload-section">
-  <h2>Проверка оригинал</h2>
+  <section class="upload-section">
+    <h2>Проверка оригинал</h2>
+    <div class="layout-wrapper">
+      <div class="upload-card">
 
-  <!-- Wrapper for both upload and result -->
-  <div class="layout-wrapper">
-
-    <div class="upload-card">
-      <!-- Original -->
-      <div class="upload-box original" data-label="Оригинал">
-        <div class="file-input-wrapper">
-          <label for="fileInput">Качи оригинал</label>
-          <span id="fileName">Няма избран</span>
-          <input type="file" id="fileInput" />
+        <!-- Original -->
+        <div class="upload-box original" id="originalBox" data-label="Оригинал">
+          <div class="file-input-wrapper">
+            <label for="fileInput">Качи оригинал</label>
+            <span id="fileName">Няма избран</span>
+            <input type="file" id="fileInput" />
+          </div>
+          <button id="hashButton">Генерирай хеш</button>
         </div>
-        <button id="hashButton">Генерирай хеш</button>
-        <p id="hashStatus" class="status"></p>
+
+        <!-- Serial -->
+        <div class="upload-box serial" id="serialBox" data-label="Сериен номер">
+          <input type="text" id="serialInput" placeholder="Въведи сериен номер" />
+          <button id="searchSerialButton">Проверка</button>
+          <p id="serialStatus" class="status"></p>
+        </div>
+
+        <!-- Hash -->
+        <div class="upload-box hash" id="hashBox" data-label="HASH">
+          <input type="text" id="hashInput" placeholder="Въведете Хеш на файла (SHA–256)" />
+          <button id="searchHashButton">Проверка</button>
+          <p id="hashStatus" class="status"></p>
+        </div>
       </div>
 
-      <!-- Serial -->
-      <div class="upload-box serial" data-label="Сериен номер">
-        <input type="text" id="serialInput" placeholder="Въведи сериен номер" />
-        <button id="searchSerialButton">Проверка</button>
-        <p id="serialStatus" class="status"></p>
-      </div>
+      <!-- Result -->
+      <div id="timestampResult" class="result-card hidden">
+        <h3>Резултат</h3>
 
-      <!-- Hash -->
-      <div class="upload-box hash" data-label="HASH">
-        <input type="text" id="hashInput" placeholder="Въведете Хеш на файла (SHA–256)" />
-        <button id="searchHashButton">Проверка</button>
+        <div class="result-row">
+          <label>Timestamp</label>
+          <div class="result-value copy-wrap">
+            <span id="resultTimestamp"></span>
+            <button class="copy-btn" data-copy="resultTimestamp" title="Копирай">📋</button>
+          </div>
+        </div>
+
+        <div class="result-row">
+          <label>HASH number</label>
+          <div class="result-value copy-wrap">
+            <span id="resultHash"></span>
+            <button class="copy-btn" data-copy="resultHash" title="Копирай">📋</button>
+          </div>
+        </div>
+
+        <div class="result-row">
+          <label>Serial number</label>
+          <div class="result-value copy-wrap">
+            <span id="resultSerial"></span>
+            <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
+          </div>
+        </div>
+
+        <button class="send-button">📤 Изпрати</button>
       </div>
     </div>
+  </section>
 
-    <!-- Стилизирана карта за резултат -->
-    <div id="timestampResult" class="result-card hidden">
-      <h3>Резултат</h3>
-
-      <div class="result-row">
-        <label>Timestamp</label>
-        <div class="result-value copy-wrap">
-          <span id="resultTimestamp"></span>
-          <button class="copy-btn" data-copy="resultTimestamp" title="Копирай">📋</button>
-        </div>
-      </div>
-
-      <div class="result-row">
-        <label>HASH number</label>
-        <div class="result-value copy-wrap">
-          <span id="resultHash"></span>
-          <button class="copy-btn" data-copy="resultHash" title="Копирай">📋</button>
-        </div>
-      </div>
-
-      <div class="result-row">
-        <label>Serial number</label>
-        <div class="result-value copy-wrap">
-          <span id="resultSerial"></span>
-          <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
-        </div>
-      </div>
-
-      <button class="send-button">📤 Изпрати</button>
-    </div>
-  </div>
-</section>
-
-
+  <!-- Scripts -->
   <script src="hash_search.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -116,8 +110,6 @@
       const username = getCookie("username");
       const toggle = document.getElementById("dropdownToggle");
       const menu = document.getElementById("dropdownMenu");
-
-      if (!toggle || !menu) return;
 
       if (loggedIn && username) {
         toggle.innerHTML = `Здравей, ${username} ▾`;
@@ -144,6 +136,12 @@
           menu.classList.remove("show");
         }
       });
+
+      // Hide result block on any box button click
+      const hideResult = () => document.getElementById("timestampResult").classList.add("hidden");
+      document.getElementById("hashButton").addEventListener("click", hideResult);
+      document.getElementById("searchSerialButton").addEventListener("click", hideResult);
+      document.getElementById("searchHashButton").addEventListener("click", hideResult);
     });
   </script>
 </body>

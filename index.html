@@ -80,6 +80,14 @@
             <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
           </div>
         </div>
+        <form method="POST" action="generate_certificate.php" target="_blank">
+          <input type="hidden" name="timestamp" id="formTimestamp" />
+          <input type="hidden" name="hash" id="formHash" />
+          <input type="hidden" name="serial" id="formSerial" />
+          <button type="submit" class="download-button">📄 Изтегли сертификат</button>
+        </form>
+        
+        
 
         <button class="send-button">📤 Изпрати</button>
       </div>
@@ -87,6 +95,17 @@
   </section>
 
   <script src="script.js"></script>
+  <script>
+    function fillCertificateForm(timestamp, hash, serial) {
+      document.getElementById("formTimestamp").value = timestamp;
+      document.getElementById("formHash").value = hash;
+      document.getElementById("formSerial").value = serial;
+    }
+  
+    // Example: Call this after successful upload (replace with real values)
+    // fillCertificateForm("2025-03-31 16:20", "abcd123456...", "SN-000001");
+  </script>
+  
 
   <!-- Dropdown logic -->
   <script>
