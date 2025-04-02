@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
   searchSerialButton.addEventListener("click", searchSerial);
 });
 
+
 // Copy to clipboard
 document.addEventListener("click", function (e) {
   if (e.target.classList.contains("copy-btn")) {
@@ -31,6 +32,21 @@ document.addEventListener("click", function (e) {
     });
   }
 });
+
+// 🔵 Central status update for the original box
+function setOriginalStatus(msg, type = "success") {
+  const originalStatus = document.getElementById("originalStatus");
+  if (!originalStatus) return;
+  originalStatus.textContent = msg;
+  originalStatus.className = `status ${type}`;
+}
+
+function clearOriginalStatus() {
+  const originalStatus = document.getElementById("originalStatus");
+  if (!originalStatus) return;
+  originalStatus.textContent = "";
+  originalStatus.className = "status";
+}
 
 function generateHash() {
   const fileInput = document.getElementById("fileInput");
@@ -45,7 +61,6 @@ function generateHash() {
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
-  hashStatus.textContent = "⏳ Генериране...";
   hashStatus.className = "loading";
 
   fetch("hash_generate.php", {
@@ -56,11 +71,8 @@ function generateHash() {
     .then(data => {
       if (data.status === "success") {
         searchHash(data.file_hash);
-        hashStatus.textContent = "✅ Хешът е генериран успешно.";
         hashStatus.className = "success";
-      }
-       else {
-        hashStatus.textContent = `❌ ${data.message || "Грешка при генериране."}`;
+      } else {
         hashStatus.className = "error";
       }
     })
@@ -94,10 +106,9 @@ function searchHash(fileHashParam) {
     .then(res => res.json())
     .then(data => {
       if (data.status === "found") {
-        hashStatus.textContent = "✅ Данни намерени.";
-        hashStatus.className = "success";
+        hashStatus.textContent = ""; // hide hash-specific message
+        setOriginalStatus("✅ Данни намерени.");
 
-        // Optional table
         if (hashTable && hashBody) {
           hashTable.classList.remove("hidden");
           hashBody.innerHTML = `
@@ -108,18 +119,19 @@ function searchHash(fileHashParam) {
             </tr>`;
         }
 
-        // Show result
         updateStyledResult(data.timestamp, data.file_hash, data.serial_number);
       } else {
         hashStatus.textContent = `❌ ${data.message || "Хешът не е намерен."}`;
         hashStatus.className = "error";
         hashTable?.classList.add("hidden");
+        clearOriginalStatus();
       }
     })
     .catch(err => {
       console.error("Search error:", err);
       hashStatus.textContent = "❌ Грешка при търсене.";
       hashStatus.className = "error";
+      clearOriginalStatus();
     });
 }
 
@@ -144,10 +156,9 @@ function searchSerial() {
     .then(res => res.json())
     .then(data => {
       if (data.status === "found") {
-        serialStatus.textContent = "✅ Данни намерени.";
-        serialStatus.className = "success";
+        serialStatus.textContent = ""; // hide serial-specific message
+        setOriginalStatus("✅ Данни намерени.");
 
-        // Update table (optional)
         if (serialTable && serialBody) {
           serialTable.classList.remove("hidden");
           serialBody.innerHTML = `
@@ -158,18 +169,19 @@ function searchSerial() {
               </tr>`;
         }
 
-        // Update styled result card
         updateStyledResult(data.timestamp, data.file_hash, data.serial_number);
       } else {
         serialStatus.textContent = `❌ ${data.message || "Серийният номер не е намерен."}`;
         serialStatus.className = "error";
         serialTable?.classList.add("hidden");
+        clearOriginalStatus();
       }
     })
     .catch(err => {
       console.error("Serial error:", err);
       serialStatus.textContent = "❌ Грешка при търсене.";
       serialStatus.className = "error";
+      clearOriginalStatus();
     });
 }
 

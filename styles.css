@@ -431,3 +431,18 @@ input[type="file"] {
   background-color: #14c46f;
   transform: translateY(-1px);
 }
+.status {
+  margin-top: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status.success {
+  color: green;
+}
+
+.status.error {
+  color: red;
+}

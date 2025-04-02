@@ -39,7 +39,7 @@
     <div class="layout-wrapper">
       <div class="upload-card">
 
-        <!-- Original -->
+        <!-- Original Tab -->
         <div class="upload-box original" id="originalBox" data-label="Оригинал">
           <div class="file-input-wrapper">
             <label for="fileInput">Качи оригинал</label>
@@ -47,6 +47,7 @@
             <input type="file" id="fileInput" />
           </div>
           <button id="hashButton">Генерирай хеш</button>
+          <p id="originalStatus" class="status"></p>
         </div>
 
         <!-- Serial -->
@@ -62,37 +63,37 @@
           <button id="searchHashButton">Проверка</button>
           <p id="hashStatus" class="status"></p>
         </div>
-      </div>
 
-      <!-- Result -->
-      <div id="timestampResult" class="result-card hidden">
-        <h3>Резултат</h3>
+        <!-- Result -->
+        <div id="timestampResult" class="result-card hidden">
+          <h3>Резултат</h3>
 
-        <div class="result-row">
-          <label>Timestamp</label>
-          <div class="result-value copy-wrap">
-            <span id="resultTimestamp"></span>
-            <button class="copy-btn" data-copy="resultTimestamp" title="Копирай">📋</button>
+          <div class="result-row">
+            <label>Timestamp</label>
+            <div class="result-value copy-wrap">
+              <span id="resultTimestamp"></span>
+              <button class="copy-btn" data-copy="resultTimestamp" title="Копирай">📋</button>
+            </div>
           </div>
-        </div>
 
-        <div class="result-row">
-          <label>HASH number</label>
-          <div class="result-value copy-wrap">
-            <span id="resultHash"></span>
-            <button class="copy-btn" data-copy="resultHash" title="Копирай">📋</button>
+          <div class="result-row">
+            <label>HASH number</label>
+            <div class="result-value copy-wrap">
+              <span id="resultHash"></span>
+              <button class="copy-btn" data-copy="resultHash" title="Копирай">📋</button>
+            </div>
           </div>
-        </div>
 
-        <div class="result-row">
-          <label>Serial number</label>
-          <div class="result-value copy-wrap">
-            <span id="resultSerial"></span>
-            <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
+          <div class="result-row">
+            <label>Serial number</label>
+            <div class="result-value copy-wrap">
+              <span id="resultSerial"></span>
+              <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
+            </div>
           </div>
-        </div>
 
-        <button class="send-button">📤 Изпрати</button>
+          <button class="send-button">📤 Изпрати</button>
+        </div>
       </div>
     </div>
   </section>
@@ -106,23 +107,17 @@
         return match ? decodeURIComponent(match[2]) : null;
       }
 
-      const loggedIn = getCookie("loggedin") === "1";
-      const username = getCookie("username");
       const toggle = document.getElementById("dropdownToggle");
       const menu = document.getElementById("dropdownMenu");
+      const loggedIn = getCookie("loggedin") === "1";
+      const username = getCookie("username");
 
       if (loggedIn && username) {
         toggle.innerHTML = `Здравей, ${username} ▾`;
-        menu.innerHTML = `
-          <a href="account.html">Моят профил</a>
-          <a href="logout.php">Изход</a>
-        `;
+        menu.innerHTML = `<a href="account.html">Моят профил</a><a href="logout.php">Изход</a>`;
       } else {
         toggle.innerHTML = "Акаунт ▾";
-        menu.innerHTML = `
-          <a href="login.html">Вход</a>
-          <a href="signup.html">Регистрация</a>
-        `;
+        menu.innerHTML = `<a href="login.html">Вход</a><a href="signup.html">Регистрация</a>`;
       }
 
       toggle.addEventListener("click", (e) => {
@@ -131,13 +126,11 @@
       });
 
       document.addEventListener("click", (e) => {
-        const dropdown = document.getElementById("userDropdown");
-        if (!dropdown.contains(e.target)) {
+        if (!document.getElementById("userDropdown").contains(e.target)) {
           menu.classList.remove("show");
         }
       });
 
-      // Hide result block on any box button click
       const hideResult = () => document.getElementById("timestampResult").classList.add("hidden");
       document.getElementById("hashButton").addEventListener("click", hideResult);
       document.getElementById("searchSerialButton").addEventListener("click", hideResult);
