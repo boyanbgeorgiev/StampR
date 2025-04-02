@@ -9,15 +9,17 @@
 </head>
 
 <body>
-  <!-- Navigation -->
   <header class="header">
     <nav class="nav">
       <a href="/index.html"><button>Времево удостоверяване</button></a>
-      <button class="active">Проверка оригинал</button>
-      <button>За нас</button>
+      <a href="/hash_search.html"><button class="active">Проверка оригинал</button></a>
+      <a href="about.html"><button>За нас</button></a> <!-- Link to About page -->
+
       <div class="dropdown" id="userDropdown">
         <button id="dropdownToggle">👤 Акаунт ▾</button>
-        <div class="dropdown-menu" id="dropdownMenu"></div>
+        <div class="dropdown-menu" id="dropdownMenu">
+          <!-- JS injects menu -->
+        </div>
       </div>
     </nav>
   </header>
@@ -107,17 +109,25 @@
         return match ? decodeURIComponent(match[2]) : null;
       }
 
-      const toggle = document.getElementById("dropdownToggle");
-      const menu = document.getElementById("dropdownMenu");
       const loggedIn = getCookie("loggedin") === "1";
       const username = getCookie("username");
+      const toggle = document.getElementById("dropdownToggle");
+      const menu = document.getElementById("dropdownMenu");
+
+      if (!toggle || !menu) return;
 
       if (loggedIn && username) {
         toggle.innerHTML = `Здравей, ${username} ▾`;
-        menu.innerHTML = `<a href="account.html">Моят профил</a><a href="logout.php">Изход</a>`;
+        menu.innerHTML = `
+          <a href="account.php">Моят профил</a>
+          <a href="logout.php">Изход</a>
+        `;
       } else {
         toggle.innerHTML = "Акаунт ▾";
-        menu.innerHTML = `<a href="login.html">Вход</a><a href="signup.html">Регистрация</a>`;
+        menu.innerHTML = `
+          <a href="login.html">Вход</a>
+          <a href="signup.html">Регистрация</a>
+        `;
       }
 
       toggle.addEventListener("click", (e) => {
@@ -126,15 +136,11 @@
       });
 
       document.addEventListener("click", (e) => {
-        if (!document.getElementById("userDropdown").contains(e.target)) {
+        const dropdown = document.getElementById("userDropdown");
+        if (!dropdown.contains(e.target)) {
           menu.classList.remove("show");
         }
       });
-
-      const hideResult = () => document.getElementById("timestampResult").classList.add("hidden");
-      document.getElementById("hashButton").addEventListener("click", hideResult);
-      document.getElementById("searchSerialButton").addEventListener("click", hideResult);
-      document.getElementById("searchHashButton").addEventListener("click", hideResult);
     });
   </script>
 </body>

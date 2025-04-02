@@ -34,7 +34,7 @@ function uploadFile() {
   const file = fileInput.files[0];
 
   // Optional: Max size check before upload (5MB)
-  const maxSizeMB = 5;
+  const maxSizeMB = 20;
   if (file.size > maxSizeMB * 1024 * 1024) {
     setStatus(`❌ Файлът трябва да е под ${maxSizeMB} MB.`, "error");
     return;

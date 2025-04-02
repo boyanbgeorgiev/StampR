@@ -14,7 +14,7 @@
     <nav class="nav">
       <button class="active">Времево удостоверяване</button>
       <a href="/hash_search.html"><button>Проверка оригинал</button></a>
-      <button>За нас</button>
+      <a href="about.html"><button>За нас</button></a> <!-- Link to About page -->
 
       <div class="dropdown" id="userDropdown">
         <button id="dropdownToggle">👤 Акаунт ▾</button>
@@ -125,7 +125,7 @@
       if (loggedIn && username) {
         toggle.innerHTML = `Здравей, ${username} ▾`;
         menu.innerHTML = `
-          <a href="account.html">Моят профил</a>
+          <a href="account.php">Моят профил</a>
           <a href="logout.php">Изход</a>
         `;
       } else {
