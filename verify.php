@@ -17,12 +17,33 @@ $serial = $_GET['serial'] ?? null;
       <button type="submit">Провери</button>
     </form>
 
-    <?php if ($serial): ?>
-      <div class="message success" style="margin-top: 20px;">
-        ✅ Сертификат с номер <strong><?= htmlspecialchars($serial) ?></strong> е валиден.<br>
-        📄 <a href="generate_certificate.php?serial=<?= urlencode($serial) ?>" target="_blank">Изтегли сертификат</a>
-      </div>
-    <?php endif; ?>
+    <?php
+require 'db.php';
+
+$serial = $_GET['serial'] ?? null;
+$valid = false;
+
+if ($serial) {
+    $stmt = $conn->prepare("SELECT file_name FROM timestamps WHERE serial_number = ?");
+    $stmt->bind_param("s", $serial);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $valid = $result->num_rows > 0;
+}
+?>
+
+        <?php if ($serial): ?>
+          <?php if ($valid): ?>
+            <div class="message success" style="margin-top: 20px;">
+              ✅ Сертификат с номер <strong><?= htmlspecialchars($serial) ?></strong> е валиден.<br>
+            </div>
+          <?php else: ?>
+            <div class="message error" style="margin-top: 20px;">
+              ❌ Сертификат с номер <strong><?= htmlspecialchars($serial) ?></strong> не е намерен.
+            </div>
+          <?php endif; ?>
+        <?php endif; ?>
+
 
     <p style="text-align: center; margin-top: 20px;">
       <a href="index.html">⬅ Обратно към началната страница</a>

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Timamp Vault – Удостоверяване</title>
+  <title>StampR – Времево удостоверяване</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -12,7 +12,7 @@
   <!-- Navigation -->
   <header class="header">
     <nav class="nav">
-      <button class="active">Времево удостоверяване</button>
+      <a href="/index.html"><button  class="active">Времево удостоверяване</button></a>
       <a href="/hash_search.html"><button>Проверка оригинал</button></a>
       <a href="about.html"><button>За нас</button></a> <!-- Link to About page -->
 
@@ -25,10 +25,10 @@
     </nav>
   </header>
 
-  <!-- Hero -->
+  <!-- Hero Section -->
   <section class="hero">
     <div class="hero-text">
-      <h1>Timestamp Vault</h1>
+      <h1>StampR</h1>
       <p>Кратко описание за услугата. Кратко описание за услугата.</p>
     </div>
     <div class="hero-icon">
@@ -38,7 +38,7 @@
 
   <!-- Upload Section -->
   <section class="upload-section">
-    <h2><span class="emoji">🧾</span> Времево удостоверение</h2>
+    <h2><span class="emoji">🧾</span> Времево удостоверяване</h2>
     <div class="layout-wrapper">
       <div class="upload-card justify-center">
         <div class="upload-box original" data-label="Оригинал">
@@ -47,6 +47,12 @@
             <span id="fileName">Няма избран</span>
             <input type="file" id="fileInput" />
           </div>
+
+          <!-- Checkbox for public visibility -->
+          <label>
+            <input type="checkbox" id="publicCheckbox" /> Запази за публично показване
+          </label>
+
           <button id="uploadButton">Удостовери</button>
         </div>
       </div>
@@ -80,14 +86,13 @@
             <button class="copy-btn" data-copy="resultSerial" title="Копирай">📋</button>
           </div>
         </div>
+
         <form method="POST" action="generate_certificate.php" target="_blank">
           <input type="hidden" name="timestamp" id="formTimestamp" />
           <input type="hidden" name="hash" id="formHash" />
           <input type="hidden" name="serial" id="formSerial" />
           <button type="submit" class="download-button">📄 Изтегли сертификат</button>
         </form>
-        
-        
 
         <button class="send-button">📤 Изпрати</button>
       </div>
@@ -96,18 +101,123 @@
 
   <script src="script.js"></script>
   <script>
+    // File upload with size limit
+    document.addEventListener("DOMContentLoaded", () => {
+      const uploadButton = document.getElementById("uploadButton");
+      const fileInput = document.getElementById("fileInput");
+      const fileNameLabel = document.getElementById("fileName");
+
+      if (!uploadButton || !fileInput || !fileNameLabel) {
+        console.error("❌ Missing key elements.");
+        return;
+      }
+
+      // Show selected file name
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files[0];
+        fileNameLabel.textContent = file ? file.name : "Няма избран";
+      });
+
+      // Upload file
+      uploadButton.addEventListener("click", uploadFile);
+    });
+
+    function uploadFile() {
+      const fileInput = document.getElementById("fileInput");
+      const publicCheckbox = document.getElementById("publicCheckbox");
+      const statusElement = document.getElementById("status");
+      const resultBlock = document.getElementById("timestampResult");
+      const resultTimestamp = document.getElementById("resultTimestamp");
+      const resultHash = document.getElementById("resultHash");
+      const resultSerial = document.getElementById("resultSerial");
+
+      if (!fileInput || !fileInput.files.length) {
+        setStatus("❌ Моля, изберете файл.", "error");
+        return;
+      }
+
+      const file = fileInput.files[0];
+
+      // Max size check based on checkbox
+      const maxSizeMB = publicCheckbox.checked ? 10 : 20; // 10MB if public, 20MB otherwise
+      if (file.size > maxSizeMB * 1024 * 1024) {
+        setStatus(`❌ Файлът трябва да е под ${maxSizeMB} MB.`, "error");
+        return;
+      }
+
+      setStatus("⏳ Обработка...", "loading");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("public", publicCheckbox.checked ? 1 : 0); // Add public field to form data
+
+      fetch("upload.php", {
+        method: "POST",
+        body: formData
+      })
+        .then(res => res.text())
+        .then(raw => {
+          try {
+            const data = JSON.parse(raw);
+
+            if (data.status === "error") {
+              console.warn("⚠️ Server error:", data.message || data);
+              setStatus(`❌ ${data.message || "Грешка от сървъра."}`, "error");
+              return;
+            }
+
+            if (data.status === "exists") {
+              setStatus("ℹ️ Файлът вече е удостоверен.", "info");
+            } else if (data.status === "success") {
+              setStatus("✅ Успешно удостоверено!", "success");
+            } else {
+              setStatus("❌ Неочакван статус от сървъра.", "error");
+              return;
+            }
+
+            // Populate result
+            const timestamp = data.timestamp || "-";
+            const hash = data.file_hash || "-";
+            const serial = data.serial_number || "-";
+
+            resultTimestamp.textContent = timestamp;
+            resultHash.textContent = hash;
+            resultSerial.textContent = serial;
+
+            resultBlock.classList.remove("hidden");
+
+            // ✅ Fill hidden form fields for PDF generation
+            fillCertificateForm(timestamp, hash, serial);
+
+          } catch (err) {
+            console.error("⚠️ JSON parse error:", err);
+            console.log("Raw server response:", raw);
+            setStatus("❌ Неочакван отговор от сървъра.", "error");
+          }
+        })
+        .catch(err => {
+          console.error("❌ Fetch/network error:", err);
+          setStatus("❌ Грешка при заявката.", "error");
+        });
+    }
+
+    // Utility: show message with type
+    function setStatus(msg, type = "info") {
+      const status = document.getElementById("status");
+      if (!status) return;
+      status.textContent = msg;
+      status.className = type;
+    }
+
+    // ✅ Utility: Fill hidden form for certificate generation
     function fillCertificateForm(timestamp, hash, serial) {
+      console.log("📄 Updating form fields:", { timestamp, hash, serial });
       document.getElementById("formTimestamp").value = timestamp;
       document.getElementById("formHash").value = hash;
       document.getElementById("formSerial").value = serial;
     }
-  
-    // Example: Call this after successful upload (replace with real values)
-    // fillCertificateForm("2025-03-31 16:20", "abcd123456...", "SN-000001");
   </script>
-  
 
-  <!-- Dropdown logic -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       function getCookie(name) {

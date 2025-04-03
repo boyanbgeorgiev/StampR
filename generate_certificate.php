@@ -14,7 +14,7 @@ if (!$timestamp || !$hash || !$serial) {
 }
 
 // Generate QR code image (temporary)
-$verifyURL = "https://ethreal.eu/verify.php?serial=" . urlencode($serial);
+$verifyURL = "https://stampr.eu/verify.php?serial=" . urlencode($serial);
 $tmpQR = tempnam(sys_get_temp_dir(), 'qr_') . '.png';
 QRcode::png($verifyURL, $tmpQR, QR_ECLEVEL_H, 4);
 

@@ -1,5 +1,4 @@
 <?php
-// Debug mode (disable in production)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 header("Content-Type: application/json");
@@ -17,14 +16,13 @@ try {
     exit;
 }
 
-// === 1. Check if user is logged in via cookie ===
+// === 2. Check if user is logged in via cookie ===
 $userId = null;
 if (isset($_COOKIE['loggedin']) && $_COOKIE['loggedin'] === "1" && isset($_COOKIE['user_id'])) {
     $userId = (int) $_COOKIE['user_id']; // safe cast
 }
 
-// === 2. VALIDATE FILE ===
-// Check file upload errors including size limits
+// === 3. VALIDATE FILE ===
 if (!isset($_FILES['file'])) {
     http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Няма избран файл."]);
@@ -34,8 +32,8 @@ if (!isset($_FILES['file'])) {
 $file = $_FILES['file'];
 
 if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
-    http_response_code(413); // Payload Too Large
-    echo json_encode(["status" => "error", "message" => "Файлът е твърде голям. Моля, изберете по-малък файл."]);
+    http_response_code(413);
+    echo json_encode(["status" => "error", "message" => "Файлът е твърде голям."]);
     exit;
 }
 
@@ -45,45 +43,69 @@ if ($file['error'] !== UPLOAD_ERR_OK) {
     exit;
 }
 
-// === 3. CHECK FILE SIZE ===
-// Set size limit to 20MB (20 * 1024 * 1024 bytes = 20MB)
-$maxFileSize = 20 * 1024 * 1024; // 20MB in bytes
+// === 4. VALIDATE SIZE
+$maxFileSize = isset($_POST['public']) && $_POST['public'] == "1" ? 10 * 1024 * 1024 : 20 * 1024 * 1024;
 if ($file['size'] > $maxFileSize) {
-    http_response_code(413); // Payload Too Large
-    echo json_encode(["status" => "error", "message" => "Файлът надвишава лимита от 20 MB."]);
+    http_response_code(413);
+    echo json_encode(["status" => "error", "message" => "Файлът надвишава лимита от " . ($maxFileSize / (1024 * 1024)) . " MB."]);
     exit;
 }
 
 $fileTmpPath = $_FILES['file']['tmp_name'];
+$fileName = basename($file['name']);
+
+// === 5. HASH BEFORE MOVING (because tmp_name is valid only now)
 $fileHash = hash_file('sha256', $fileTmpPath);
 
-// === 4. CHECK FOR EXISTING HASH ===
-$stmt = $pdo->prepare("SELECT timestamp, serial_number FROM timestamps WHERE file_hash = ?");
+// Check if already exists
+$stmt = $pdo->prepare("SELECT timestamp, serial_number, file_name FROM timestamps WHERE file_hash = ?");
 $stmt->execute([$fileHash]);
-if ($existing = $stmt->fetch(PDO::FETCH_ASSOC)) {
+$existing = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if ($existing) {
     echo json_encode([
         "status" => "exists",
         "message" => "Файлът вече е удостоверен.",
-        "file_hash" => $fileHash,
         "timestamp" => $existing['timestamp'],
-        "serial_number" => $existing['serial_number']
+        "serial_number" => $existing['serial_number'],
+        "file_name" => $existing['file_name'],
     ]);
     exit;
 }
 
-// === 5. GENERATE TIMESTAMP REQUEST ===
+// === 6. If public: move to uploads and use that path
+if (isset($_POST['public']) && $_POST['public'] == "1") {
+    $uploadDir = __DIR__ . '/uploads/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+
+    $targetPath = $uploadDir . $fileName;
+
+    if (!move_uploaded_file($fileTmpPath, $targetPath)) {
+        http_response_code(500);
+        echo json_encode(["status" => "error", "message" => "Неуспешно качване на файла."]);
+        exit;
+    }
+
+    $filePathForTSA = $targetPath;
+} else {
+    $filePathForTSA = $fileTmpPath;
+}
+
+// === 7. TSA: Create request
 $requestFile = tempnam(sys_get_temp_dir(), 'tsq_');
 $responseFile = tempnam(sys_get_temp_dir(), 'tsr_');
 
-exec("openssl ts -query -data " . escapeshellarg($fileTmpPath) . " -cert -sha256 -no_nonce -out " . escapeshellarg($requestFile), $out1, $code1);
+exec("openssl ts -query -data " . escapeshellarg($filePathForTSA) . " -cert -sha256 -no_nonce -out " . escapeshellarg($requestFile), $out1, $code1);
 if ($code1 !== 0 || !file_exists($requestFile)) {
     http_response_code(500);
     echo json_encode(["status" => "error", "message" => "Грешка при създаване на заявка (TSQ)."]);
     exit;
 }
 
-// === 6. CONTACT TSA ===
-$tsa_url = "http://username:password@tsatest.b-trust.org"; // <-- Replace with real creds
+// === 8. Send to TSA
+$tsa_url = "http://username:password@tsatest.b-trust.org";
 exec("curl -s -S -H 'Content-Type: application/timestamp-query' --data-binary @" . escapeshellarg($requestFile) . " " . escapeshellarg($tsa_url) . " -o " . escapeshellarg($responseFile), $out2, $code2);
 
 if ($code2 !== 0 || !file_exists($responseFile)) {
@@ -92,7 +114,6 @@ if ($code2 !== 0 || !file_exists($responseFile)) {
     exit;
 }
 
-// === 7. VALIDATE TSA RESPONSE ===
 $tsaResponseText = shell_exec("openssl ts -reply -in " . escapeshellarg($responseFile) . " -text");
 if (!$tsaResponseText) {
     http_response_code(500);
@@ -100,12 +121,10 @@ if (!$tsaResponseText) {
     exit;
 }
 
-// === 8. PARSE TIMESTAMP ===
 preg_match('/Time stamp: (.*?)\n/', $tsaResponseText, $matchTime);
 $timestampRaw = trim($matchTime[1] ?? '');
 $timestamp = date("Y-m-d H:i:s", strtotime($timestampRaw));
 
-// === 9. PARSE SERIAL NUMBER ===
 preg_match('/Serial number: (.*?)\n/', $tsaResponseText, $matchSerial);
 $serialNumber = trim($matchSerial[1] ?? '');
 
@@ -115,25 +134,25 @@ if (!$timestamp || !$serialNumber) {
     exit;
 }
 
-// === 7. Save to DB (optionally with user_id) ===
+// === 9. SAVE TO DB
 if ($userId !== null) {
-    $stmt = $pdo->prepare("INSERT INTO timestamps (user_id, file_hash, timestamp, serial_number) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$userId, $fileHash, $timestamp, $serialNumber]);
+    $stmt = $pdo->prepare("INSERT INTO timestamps (user_id, file_hash, timestamp, serial_number, file_name) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$userId, $fileHash, $timestamp, $serialNumber, $fileName]);
 } else {
-    $stmt = $pdo->prepare("INSERT INTO timestamps (file_hash, timestamp, serial_number) VALUES (?, ?, ?)");
-    $stmt->execute([$fileHash, $timestamp, $serialNumber]);
+    $stmt = $pdo->prepare("INSERT INTO timestamps (file_hash, timestamp, serial_number, file_name) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$fileHash, $timestamp, $serialNumber, $fileName]);
 }
 
-// === 10. RETURN RESPONSE ===
+// === 10. RESPONSE
 echo json_encode([
     "status" => "success",
     "message" => "Удостоверяването е успешно.",
     "file_hash" => $fileHash,
     "timestamp" => $timestamp,
-    "serial_number" => $serialNumber
+    "serial_number" => $serialNumber,
+    "file_name" => $fileName
 ]);
 
-// Optional: clean up temp files
 @unlink($requestFile);
 @unlink($responseFile);
 ?>
