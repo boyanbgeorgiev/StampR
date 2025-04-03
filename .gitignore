@@ -1,9 +1,5 @@
-# Ignore all files inside fpdf, phpqrcode, tcpdf
-fpdf/*
-phpqrcode/*
-tcpdf/*
+# Ignore all files in uploads/
+uploads/*
 
-# But keep a placeholder file so folders stay in the repo
-!fpdf/.gitkeep
-!phpqrcode/.gitkeep
-!tcpdf/.gitkeep
+# But keep an empty placeholder file
+!uploads/.gitkeep
