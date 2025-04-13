@@ -6,15 +6,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StampR – Времево удостоверяване</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- Зареждаме reCAPTCHA API -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
   <!-- Navigation -->
   <header class="header">
     <nav class="nav">
-      <a href="/index.html"><button  class="active">Времево удостоверяване</button></a>
+      <a href="/index.html"><button class="active">Времево удостоверяване</button></a>
       <a href="/hash_search.html"><button>Проверка оригинал</button></a>
-      <a href="about.html"><button>За нас</button></a> <!-- Link to About page -->
+      <a href="about.html"><button>За нас</button></a>
 
       <div class="dropdown" id="userDropdown">
         <button id="dropdownToggle">👤 Акаунт ▾</button>
@@ -48,19 +50,22 @@
             <input type="file" id="fileInput" />
           </div>
 
-          <!-- Checkbox for public visibility -->
+          <!-- Checkbox за публично показване с етикет за максимален размер -->
           <label>
-            <input type="checkbox" id="publicCheckbox" /> Запази за публично показване
+            <input type="checkbox" id="publicCheckbox" /> Запази за публично показване <span id="maxFileSizeLabel"></span>
           </label>
+
+          <!-- reCAPTCHA widget -->
+          <div class="g-recaptcha" data-sitekey="6LdguQQrAAAAAGpftJEG4h_lhUjXK_AbBFFpemt-"></div>
 
           <button id="uploadButton">Удостовери</button>
         </div>
       </div>
 
-      <!-- Status -->
+      <!-- Секция за статус -->
       <div id="status" class="status-info"></div>
 
-      <!-- Result -->
+      <!-- Секция за резултат -->
       <div id="timestampResult" class="result-card hidden">
         <h3>Резултат</h3>
         <div class="result-row">
@@ -87,10 +92,16 @@
           </div>
         </div>
 
+        <!-- Формуляр за генериране на сертификат с допълнителни скрити полета -->
         <form method="POST" action="generate_certificate.php" target="_blank">
           <input type="hidden" name="timestamp" id="formTimestamp" />
           <input type="hidden" name="hash" id="formHash" />
           <input type="hidden" name="serial" id="formSerial" />
+          <input type="hidden" name="first_name" id="formFirstName" />
+          <input type="hidden" name="last_name" id="formLastName" />
+          <input type="hidden" name="email" id="formEmail" />
+          <input type="hidden" name="phone" id="formPhone" />
+          <input type="hidden" name="file_name" id="formFileName" />
           <button type="submit" class="download-button">📄 Изтегли сертификат</button>
         </form>
 
@@ -101,24 +112,43 @@
 
   <script src="script.js"></script>
   <script>
-    // File upload with size limit
+    // Функция за получаване на стойност от бисквитка по име
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    // Обработка на избора на файл, етикет за максимален размер и качване
     document.addEventListener("DOMContentLoaded", () => {
       const uploadButton = document.getElementById("uploadButton");
       const fileInput = document.getElementById("fileInput");
       const fileNameLabel = document.getElementById("fileName");
+      const publicCheckbox = document.getElementById("publicCheckbox");
+      const maxFileSizeLabel = document.getElementById("maxFileSizeLabel");
 
-      if (!uploadButton || !fileInput || !fileNameLabel) {
-        console.error("❌ Missing key elements.");
+      if (!uploadButton || !fileInput || !fileNameLabel || !publicCheckbox || !maxFileSizeLabel) {
+        console.error("❌ Липсват ключови елементи.");
         return;
       }
 
-      // Show selected file name
+      // Функция за обновяване на етикета за максимален размер
+      function updateMaxSizeLabel() {
+        maxFileSizeLabel.textContent = publicCheckbox.checked ? " (до 10 MB)" : " (до 20 MB)";
+      }
+
+      // Инициализация при зареждане
+      updateMaxSizeLabel();
+
+      // Обновяване при промяна на чекбокса
+      publicCheckbox.addEventListener("change", updateMaxSizeLabel);
+
+      // Показване на избраното име на файла
       fileInput.addEventListener("change", () => {
         const file = fileInput.files[0];
         fileNameLabel.textContent = file ? file.name : "Няма избран";
       });
 
-      // Upload file
+      // Добавяне на обработчик на бутона за качване
       uploadButton.addEventListener("click", uploadFile);
     });
 
@@ -136,10 +166,17 @@
         return;
       }
 
+      // Проверка на каптчата – използваме grecaptcha.getResponse(), за да проверим дали е попълнена
+      const captchaResponse = grecaptcha.getResponse();
+      if (!captchaResponse) {
+        setStatus("❌ Моля, потвърдете, че не сте робот.", "error");
+        return;
+      }
+
       const file = fileInput.files[0];
 
-      // Max size check based on checkbox
-      const maxSizeMB = publicCheckbox.checked ? 10 : 20; // 10MB if public, 20MB otherwise
+      // Проверка за максимален размер според избора (10 MB ако е публичен, 20 MB ако не е)
+      const maxSizeMB = publicCheckbox.checked ? 10 : 20;
       if (file.size > maxSizeMB * 1024 * 1024) {
         setStatus(`❌ Файлът трябва да е под ${maxSizeMB} MB.`, "error");
         return;
@@ -149,59 +186,64 @@
 
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("public", publicCheckbox.checked ? 1 : 0); // Add public field to form data
+      formData.append("public", publicCheckbox.checked ? 1 : 0);
+      // Добавяне на отговора на reCAPTCHA към данните за изпращане
+      formData.append("g-recaptcha-response", captchaResponse);
 
       fetch("upload.php", {
         method: "POST",
         body: formData
       })
-        .then(res => res.text())
-        .then(raw => {
-          try {
-            const data = JSON.parse(raw);
+      .then(res => res.text())
+      .then(raw => {
+        try {
+          const data = JSON.parse(raw);
 
-            if (data.status === "error") {
-              console.warn("⚠️ Server error:", data.message || data);
-              setStatus(`❌ ${data.message || "Грешка от сървъра."}`, "error");
-              return;
-            }
-
-            if (data.status === "exists") {
-              setStatus("ℹ️ Файлът вече е удостоверен.", "info");
-            } else if (data.status === "success") {
-              setStatus("✅ Успешно удостоверено!", "success");
-            } else {
-              setStatus("❌ Неочакван статус от сървъра.", "error");
-              return;
-            }
-
-            // Populate result
-            const timestamp = data.timestamp || "-";
-            const hash = data.file_hash || "-";
-            const serial = data.serial_number || "-";
-
-            resultTimestamp.textContent = timestamp;
-            resultHash.textContent = hash;
-            resultSerial.textContent = serial;
-
-            resultBlock.classList.remove("hidden");
-
-            // ✅ Fill hidden form fields for PDF generation
-            fillCertificateForm(timestamp, hash, serial);
-
-          } catch (err) {
-            console.error("⚠️ JSON parse error:", err);
-            console.log("Raw server response:", raw);
-            setStatus("❌ Неочакван отговор от сървъра.", "error");
+          if (data.status === "error") {
+            console.warn("⚠️ Грешка от сървъра:", data.message || data);
+            setStatus(`❌ ${data.message || "Грешка от сървъра."}`, "error");
+            return;
           }
-        })
-        .catch(err => {
-          console.error("❌ Fetch/network error:", err);
-          setStatus("❌ Грешка при заявката.", "error");
-        });
+
+          if (data.status === "exists") {
+            setStatus("ℹ️ Файлът вече е удостоверен.", "info");
+          } else if (data.status === "success") {
+            setStatus("✅ Успешно удостоверено!", "success");
+          } else {
+            setStatus("❌ Неочакван статус от сървъра.", "error");
+            return;
+          }
+
+          // Попълване на резултатите
+          const timestamp = data.timestamp || "-";
+          const hash = data.file_hash || "-";
+          const serial = data.serial_number || "-";
+
+          resultTimestamp.textContent = timestamp;
+          resultHash.textContent = hash;
+          resultSerial.textContent = serial;
+
+          resultBlock.classList.remove("hidden");
+
+          // Попълване на скритите полета за генериране на сертификат с данните на текущия потребител
+          fillCertificateForm(timestamp, hash, serial);
+
+          // Нулиране на reCAPTCHA (по желание)
+          grecaptcha.reset();
+
+        } catch (err) {
+          console.error("⚠️ Грешка при обработката на JSON:", err);
+          console.log("Raw server response:", raw);
+          setStatus("❌ Неочакван отговор от сървъра.", "error");
+        }
+      })
+      .catch(err => {
+        console.error("❌ Грешка при заявката:", err);
+        setStatus("❌ Грешка при заявката.", "error");
+      });
     }
 
-    // Utility: show message with type
+    // Функция за задаване на съобщение със съответния тип
     function setStatus(msg, type = "info") {
       const status = document.getElementById("status");
       if (!status) return;
@@ -209,12 +251,27 @@
       status.className = type;
     }
 
-    // ✅ Utility: Fill hidden form for certificate generation
+    // Функция за попълване на скритите полета за генериране на сертификат
+    // Данните се извличат динамично от бисквитки и елемента за име на файл
     function fillCertificateForm(timestamp, hash, serial) {
-      console.log("📄 Updating form fields:", { timestamp, hash, serial });
+      console.log("📄 Попълване на сертификатните полета:", { timestamp, hash, serial });
       document.getElementById("formTimestamp").value = timestamp;
       document.getElementById("formHash").value = hash;
       document.getElementById("formSerial").value = serial;
+      
+      // Използваме функцията getCookie за динамично вземане на данните на потребителя
+      const firstName = getCookie("first_name") || "";
+      const lastName = getCookie("last_name") || "";
+      const email = getCookie("email") || "";
+      const phone = getCookie("phone") || "";
+      
+      document.getElementById("formFirstName").value = firstName;
+      document.getElementById("formLastName").value = lastName;
+      document.getElementById("formEmail").value = email;
+      document.getElementById("formPhone").value = phone;
+      
+      // Вземане на името на избрания файл от елемента fileName
+      document.getElementById("formFileName").value = document.getElementById("fileName").textContent;
     }
   </script>
 
@@ -226,14 +283,22 @@
       }
 
       const loggedIn = getCookie("loggedin") === "1";
-      const username = getCookie("username");
+      const firstName = getCookie("first_name");
+      const lastName = getCookie("last_name");
+      const fallbackUsername = getCookie("username");
       const toggle = document.getElementById("dropdownToggle");
       const menu = document.getElementById("dropdownMenu");
 
       if (!toggle || !menu) return;
 
-      if (loggedIn && username) {
-        toggle.innerHTML = `Здравей, ${username} ▾`;
+      if (loggedIn && firstName && lastName) {
+        toggle.innerHTML = `Здравей, ${firstName} ${lastName} ▾`;
+        menu.innerHTML = `
+          <a href="account.php">Моят профил</a>
+          <a href="logout.php">Изход</a>
+        `;
+      } else if (loggedIn && fallbackUsername) {
+        toggle.innerHTML = `Здравей, ${fallbackUsername} ▾`;
         menu.innerHTML = `
           <a href="account.php">Моят профил</a>
           <a href="logout.php">Изход</a>

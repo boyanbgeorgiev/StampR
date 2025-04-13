@@ -105,7 +105,7 @@ if ($code1 !== 0 || !file_exists($requestFile)) {
 }
 
 // === 8. Send to TSA
-$tsa_url = "http://username:password@tsatest.b-trust.org";
+$tsa_url = "http://freetsa.org/tsr";
 exec("curl -s -S -H 'Content-Type: application/timestamp-query' --data-binary @" . escapeshellarg($requestFile) . " " . escapeshellarg($tsa_url) . " -o " . escapeshellarg($responseFile), $out2, $code2);
 
 if ($code2 !== 0 || !file_exists($responseFile)) {
