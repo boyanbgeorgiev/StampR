@@ -12,6 +12,14 @@ require 'db.php';
 // Get user ID from the cookie
 $userId = $_COOKIE['user_id'];
 
+// Fetch user details
+$stmt = $conn->prepare("SELECT username, first_name, last_name, email, phone FROM users WHERE id = ?");
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$stmt->bind_result($username, $firstName, $lastName, $email, $phone);
+$stmt->fetch();
+$stmt->close();
+
 // Fetch files for the logged-in user
 $stmt = $conn->prepare("SELECT timestamp, serial_number, file_hash, file_name FROM timestamps WHERE user_id = ?");
 $stmt->bind_param("i", $userId);
@@ -49,6 +57,32 @@ unset($file);
             background-color: #4CAF50;
             color: white;
         }
+        .dev-mode {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .dev-mode select, .dev-mode input[type="password"] {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 100%;
+        }
+        .dev-mode button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .dev-mode button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -65,6 +99,14 @@ unset($file);
 </header>
 
 <section class="profile-section">
+    <h2>Моят профил</h2>
+    <div>
+        <p><strong>Потребителско име:</strong> <?php echo htmlspecialchars($username); ?></p>
+        <p><strong>Име:</strong> <?php echo htmlspecialchars($firstName . ' ' . $lastName); ?></p>
+        <p><strong>Имейл:</strong> <?php echo htmlspecialchars($email); ?></p>
+        <p><strong>Телефон:</strong> <?php echo htmlspecialchars($phone); ?></p>
+    </div>
+
     <h2>Моите удостоверени оригинали</h2>
 
     <?php if (count($files) > 0): ?>
@@ -104,6 +146,24 @@ unset($file);
     <?php else: ?>
         <p>Нямате удостоверени оригинали.</p>
     <?php endif; ?>
+
+    <div class="dev-mode">
+        <h3>Режим за разработчици</h3>
+        <form id="devModeForm">
+            <label for="devPin">Въведете PIN за достъп:</label>
+            <input type="password" id="devPin" placeholder="Въведете PIN" required />
+
+            <label for="tsaUrl">Изберете TSA адрес:</label>
+            <select id="tsaUrl" disabled>
+                <option value="http://freetsa.org/tsr">Free TSA</option>
+                <option value="http://@tsatest.b-trust.org">Borica Test</option>
+                <option value="http://@tsa.b-trust.org">Borica Real</option>
+            </select>
+
+            <button type="button" id="enableDevMode">Активирай режим</button>
+            <button type="submit" id="saveTsaUrl" disabled>Запази адрес</button>
+        </form>
+    </div>
 </section>
 
 <script>
@@ -177,6 +237,33 @@ document.addEventListener("DOMContentLoaded", () => {
     btnPrivate.addEventListener("click", showPrivate);
 
     showPublic();
+
+    // Developer mode
+    const devPinInput = document.getElementById("devPin");
+    const tsaUrlSelect = document.getElementById("tsaUrl");
+    const enableDevModeButton = document.getElementById("enableDevMode");
+    const saveTsaUrlButton = document.getElementById("saveTsaUrl");
+
+    enableDevModeButton.addEventListener("click", () => {
+        const pin = devPinInput.value;
+        if (pin === "1234") { // Replace with your secure PIN
+            alert("Режим за разработчици активиран.");
+            tsaUrlSelect.disabled = false;
+            saveTsaUrlButton.disabled = false;
+        } else {
+            alert("Грешен PIN.");
+        }
+    });
+
+    document.getElementById("devModeForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const selectedUrl = tsaUrlSelect.value;
+
+        // Set the TSA URL in a cookie
+        document.cookie = `tsa_url=${encodeURIComponent(selectedUrl)}; path=/; max-age=86400`; // Cookie valid for 1 day
+
+        alert(`TSA адресът е променен на: ${selectedUrl}`);
+    });
 });
 </script>
 </body>

@@ -365,7 +365,6 @@ input[type="file"] {
 }
 
 .auth-container input[type="text"],
-.auth-container input[type="email"],
 .auth-container input[type="password"] {
   padding: 12px;
   border: 1px solid #ccc;
@@ -498,63 +497,4 @@ table tr:hover {
 
 .about-section strong {
   color: #000;
-}
-
-/* Style for the status message container */
-#status {
-  font-family: Arial, sans-serif;
-  font-size: 16px;
-  padding: 15px;
-  margin: 20px 0;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.5;
-}
-
-/* Default status style */
-#status.info {
-  background-color: #e7f3ff;
-  color: #3178c6;
-  border-color: #b3d4fc;
-}
-
-/* Error status style */
-#status.error {
-  background-color: #ffe7e7;
-  color: #d93025;
-  border-color: #f5c6cb;
-}
-
-/* Success status style */
-#status.success {
-  background-color: #e7fbe7;
-  color: #2e7d32;
-  border-color: #c3e6cb;
-}
-
-/* Highlight for uploader details */
-#status .uploader-details {
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-/* Style for anonymous uploader */
-#status .uploader-details.anonymous {
-  color: #6c757d;
-  font-style: italic;
-}
-
-/* Style for named uploader */
-#status .uploader-details.named {
-  color: #3178c6;
-}
-
-/* Style for email and phone */
-#status .uploader-contact {
-  font-size: 14px;
-  color: #555;
-  margin-top: 5px;
 }
