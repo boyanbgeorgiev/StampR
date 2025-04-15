@@ -19,7 +19,7 @@ try {
 // === 2. Check if user is logged in via cookie ===
 $userId = null;
 if (isset($_COOKIE['loggedin']) && $_COOKIE['loggedin'] === "1" && isset($_COOKIE['user_id'])) {
-    $userId = (int) $_COOKIE['user_id']; // safe cast
+    $userId = (int) $_COOKIE['user_id'];
 }
 
 // === 3. VALIDATE FILE ===
@@ -43,7 +43,7 @@ if ($file['error'] !== UPLOAD_ERR_OK) {
     exit;
 }
 
-// === 4. VALIDATE SIZE
+// === 4. VALIDATE SIZE ===
 $maxFileSize = isset($_POST['public']) && $_POST['public'] == "1" ? 10 * 1024 * 1024 : 20 * 1024 * 1024;
 if ($file['size'] > $maxFileSize) {
     http_response_code(413);
@@ -53,12 +53,10 @@ if ($file['size'] > $maxFileSize) {
 
 $fileTmpPath = $_FILES['file']['tmp_name'];
 $fileName = basename($file['name']);
-
-// === 5. HASH BEFORE MOVING (because tmp_name is valid only now)
 $fileHash = hash_file('sha256', $fileTmpPath);
 
-// Check if already exists
-$stmt = $pdo->prepare("SELECT timestamp, serial_number, file_name FROM timestamps WHERE file_hash = ?");
+// === 5. CHECK IF FILE ALREADY EXISTS ===
+$stmt = $pdo->prepare("SELECT timestamp, serial_number, file_name, uploader_name, uploader_email, uploader_phone, is_anonymous FROM timestamps WHERE file_hash = ?");
 $stmt->execute([$fileHash]);
 $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -69,11 +67,16 @@ if ($existing) {
         "timestamp" => $existing['timestamp'],
         "serial_number" => $existing['serial_number'],
         "file_name" => $existing['file_name'],
+        "file_hash" => $fileHash,
+        "uploader_name" => $existing['uploader_name'],
+        "uploader_email" => $existing['uploader_email'],
+        "uploader_phone" => $existing['uploader_phone'],
+        "is_anonymous" => $existing['is_anonymous']
     ]);
     exit;
 }
 
-// === 6. If public: move to uploads and use that path
+// === 6. MOVE TO /uploads IF PUBLIC ===
 if (isset($_POST['public']) && $_POST['public'] == "1") {
     $uploadDir = __DIR__ . '/uploads/';
     if (!is_dir($uploadDir)) {
@@ -93,7 +96,7 @@ if (isset($_POST['public']) && $_POST['public'] == "1") {
     $filePathForTSA = $fileTmpPath;
 }
 
-// === 7. TSA: Create request
+// === 7. CREATE TSA REQUEST ===
 $requestFile = tempnam(sys_get_temp_dir(), 'tsq_');
 $responseFile = tempnam(sys_get_temp_dir(), 'tsr_');
 
@@ -104,8 +107,8 @@ if ($code1 !== 0 || !file_exists($requestFile)) {
     exit;
 }
 
-// === 8. Send to TSA
-$tsa_url = "http://freetsa.org/tsr";
+// === 8. SEND TO TSA ===
+$tsa_url = "http://freetsa.org/tsr"; // Replace with production URL if needed
 exec("curl -s -S -H 'Content-Type: application/timestamp-query' --data-binary @" . escapeshellarg($requestFile) . " " . escapeshellarg($tsa_url) . " -o " . escapeshellarg($responseFile), $out2, $code2);
 
 if ($code2 !== 0 || !file_exists($responseFile)) {
@@ -134,16 +137,38 @@ if (!$timestamp || !$serialNumber) {
     exit;
 }
 
-// === 9. SAVE TO DB
-if ($userId !== null) {
-    $stmt = $pdo->prepare("INSERT INTO timestamps (user_id, file_hash, timestamp, serial_number, file_name) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$userId, $fileHash, $timestamp, $serialNumber, $fileName]);
-} else {
-    $stmt = $pdo->prepare("INSERT INTO timestamps (file_hash, timestamp, serial_number, file_name) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$fileHash, $timestamp, $serialNumber, $fileName]);
+// === 9. EXTRACT USER INFO IF NOT ANONYMOUS ===
+$isAnonymous = isset($_POST['anonymous']) && $_POST['anonymous'] == "1";
+$uploaderName = null;
+$uploaderEmail = null;
+$uploaderPhone = null;
+
+if (!$isAnonymous) {
+    $uploaderName = $_COOKIE['first_name'] ?? null;
+    if (isset($_COOKIE['last_name'])) {
+        $uploaderName .= ' ' . $_COOKIE['last_name'];
+    }
+    $uploaderEmail = $_COOKIE['email'] ?? null;
+    $uploaderPhone = $_COOKIE['phone'] ?? null;
 }
 
-// === 10. RESPONSE
+// === 10. SAVE TO DB ===
+$stmt = $pdo->prepare("INSERT INTO timestamps (user_id, file_hash, timestamp, serial_number, file_name, uploader_name, uploader_email, uploader_phone, is_anonymous)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+$stmt->execute([
+    $userId,
+    $fileHash,
+    $timestamp,
+    $serialNumber,
+    $fileName,
+    $uploaderName,
+    $uploaderEmail,
+    $uploaderPhone,
+    $isAnonymous ? 1 : 0
+]);
+
+// === 11. SUCCESS RESPONSE ===
 echo json_encode([
     "status" => "success",
     "message" => "Удостоверяването е успешно.",

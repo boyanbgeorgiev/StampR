@@ -52,7 +52,12 @@
 
           <!-- Checkbox за публично показване с етикет за максимален размер -->
           <label>
-            <input type="checkbox" id="publicCheckbox" /> Запази за публично показване <span id="maxFileSizeLabel"></span>
+            <input type="checkbox" id="publicCheckbox" /> Запази за публично показване <span
+              id="maxFileSizeLabel"></span>
+          </label>
+          <label>
+            <input type="checkbox" id="anonymousCheckbox" />
+            Анонимно удостоверяване
           </label>
 
           <!-- reCAPTCHA widget -->
@@ -155,6 +160,7 @@
     function uploadFile() {
       const fileInput = document.getElementById("fileInput");
       const publicCheckbox = document.getElementById("publicCheckbox");
+      const anonymousCheckbox = document.getElementById("anonymousCheckbox");
       const statusElement = document.getElementById("status");
       const resultBlock = document.getElementById("timestampResult");
       const resultTimestamp = document.getElementById("resultTimestamp");
@@ -166,7 +172,6 @@
         return;
       }
 
-      // Проверка на каптчата – използваме grecaptcha.getResponse(), за да проверим дали е попълнена
       const captchaResponse = grecaptcha.getResponse();
       if (!captchaResponse) {
         setStatus("❌ Моля, потвърдете, че не сте робот.", "error");
@@ -174,8 +179,6 @@
       }
 
       const file = fileInput.files[0];
-
-      // Проверка за максимален размер според избора (10 MB ако е публичен, 20 MB ако не е)
       const maxSizeMB = publicCheckbox.checked ? 10 : 20;
       if (file.size > maxSizeMB * 1024 * 1024) {
         setStatus(`❌ Файлът трябва да е под ${maxSizeMB} MB.`, "error");
@@ -187,61 +190,55 @@
       const formData = new FormData();
       formData.append("file", file);
       formData.append("public", publicCheckbox.checked ? 1 : 0);
-      // Добавяне на отговора на reCAPTCHA към данните за изпращане
+      formData.append("anonymous", anonymousCheckbox && anonymousCheckbox.checked ? 1 : 0);
       formData.append("g-recaptcha-response", captchaResponse);
 
       fetch("upload.php", {
         method: "POST",
         body: formData
       })
-      .then(res => res.text())
-      .then(raw => {
-        try {
-          const data = JSON.parse(raw);
+        .then(res => res.text())
+        .then(raw => {
+          try {
+            const data = JSON.parse(raw);
 
-          if (data.status === "error") {
-            console.warn("⚠️ Грешка от сървъра:", data.message || data);
-            setStatus(`❌ ${data.message || "Грешка от сървъра."}`, "error");
-            return;
+            if (data.status === "error") {
+              setStatus(`❌ ${data.message || "Грешка от сървъра."}`, "error");
+              return;
+            }
+
+            if (data.status === "exists") {
+              const person = data.is_anonymous === "1"
+                ? "Анонимен"
+                : `${data.uploader_name || "Неизвестен"} (${data.uploader_email || "няма имейл"}, ${data.uploader_phone || "няма тел."})`;
+              setStatus(`ℹ️ Файлът вече е удостоверен от: ${person}`, "info");
+            } else if (data.status === "success") {
+              setStatus("✅ Успешно удостоверено!", "success");
+            } else {
+              setStatus("❌ Неочакван статус от сървъра.", "error");
+              return;
+            }
+
+            resultTimestamp.textContent = data.timestamp || "-";
+            resultHash.textContent = data.file_hash || "-";
+            resultSerial.textContent = data.serial_number || "-";
+            resultBlock.classList.remove("hidden");
+
+            fillCertificateForm(data.timestamp, data.file_hash, data.serial_number);
+            grecaptcha.reset();
+
+          } catch (err) {
+            console.error("⚠️ JSON parse error:", err);
+            console.log("Raw server response:", raw);
+            setStatus("❌ Неочакван отговор от сървъра.", "error");
           }
-
-          if (data.status === "exists") {
-            setStatus("ℹ️ Файлът вече е удостоверен.", "info");
-          } else if (data.status === "success") {
-            setStatus("✅ Успешно удостоверено!", "success");
-          } else {
-            setStatus("❌ Неочакван статус от сървъра.", "error");
-            return;
-          }
-
-          // Попълване на резултатите
-          const timestamp = data.timestamp || "-";
-          const hash = data.file_hash || "-";
-          const serial = data.serial_number || "-";
-
-          resultTimestamp.textContent = timestamp;
-          resultHash.textContent = hash;
-          resultSerial.textContent = serial;
-
-          resultBlock.classList.remove("hidden");
-
-          // Попълване на скритите полета за генериране на сертификат с данните на текущия потребител
-          fillCertificateForm(timestamp, hash, serial);
-
-          // Нулиране на reCAPTCHA (по желание)
-          grecaptcha.reset();
-
-        } catch (err) {
-          console.error("⚠️ Грешка при обработката на JSON:", err);
-          console.log("Raw server response:", raw);
-          setStatus("❌ Неочакван отговор от сървъра.", "error");
-        }
-      })
-      .catch(err => {
-        console.error("❌ Грешка при заявката:", err);
-        setStatus("❌ Грешка при заявката.", "error");
-      });
+        })
+        .catch(err => {
+          console.error("❌ Грешка при заявката:", err);
+          setStatus("❌ Грешка при заявката.", "error");
+        });
     }
+
 
     // Функция за задаване на съобщение със съответния тип
     function setStatus(msg, type = "info") {
@@ -258,19 +255,29 @@
       document.getElementById("formTimestamp").value = timestamp;
       document.getElementById("formHash").value = hash;
       document.getElementById("formSerial").value = serial;
-      
-      // Използваме функцията getCookie за динамично вземане на данните на потребителя
-      const firstName = getCookie("first_name") || "";
-      const lastName = getCookie("last_name") || "";
-      const email = getCookie("email") || "";
-      const phone = getCookie("phone") || "";
-      
-      document.getElementById("formFirstName").value = firstName;
-      document.getElementById("formLastName").value = lastName;
-      document.getElementById("formEmail").value = email;
-      document.getElementById("formPhone").value = phone;
-      
-      // Вземане на името на избрания файл от елемента fileName
+
+      const anonymousCheckbox = document.getElementById("anonymousCheckbox");
+
+      if (anonymousCheckbox && anonymousCheckbox.checked) {
+        // Clear personal data fields if anonymous is selected
+        document.getElementById("formFirstName").value = "";
+        document.getElementById("formLastName").value = "";
+        document.getElementById("formEmail").value = "";
+        document.getElementById("formPhone").value = "";
+      } else {
+        // Fill personal data fields from cookies
+        const firstName = getCookie("first_name") || "";
+        const lastName = getCookie("last_name") || "";
+        const email = getCookie("email") || "";
+        const phone = getCookie("phone") || "";
+
+        document.getElementById("formFirstName").value = firstName;
+        document.getElementById("formLastName").value = lastName;
+        document.getElementById("formEmail").value = email;
+        document.getElementById("formPhone").value = phone;
+      }
+
+      // Set the file name
       document.getElementById("formFileName").value = document.getElementById("fileName").textContent;
     }
   </script>

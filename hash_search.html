@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="bg">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,13 +12,11 @@
     <nav class="nav">
       <a href="/index.html"><button>Времево удостоверяване</button></a>
       <a href="/hash_search.html"><button class="active">Проверка оригинал</button></a>
-      <a href="about.html"><button>За нас</button></a> <!-- Link to About page -->
+      <a href="about.html"><button>За нас</button></a>
 
       <div class="dropdown" id="userDropdown">
         <button id="dropdownToggle">👤 Акаунт ▾</button>
-        <div class="dropdown-menu" id="dropdownMenu">
-          <!-- JS injects menu -->
-        </div>
+        <div class="dropdown-menu" id="dropdownMenu"></div>
       </div>
     </nav>
   </header>
@@ -41,7 +38,6 @@
     <div class="layout-wrapper">
       <div class="upload-card">
 
-        <!-- Original Tab -->
         <div class="upload-box original" id="originalBox" data-label="Оригинал">
           <div class="file-input-wrapper">
             <label for="fileInput">Качи оригинал</label>
@@ -52,21 +48,18 @@
           <p id="originalStatus" class="status"></p>
         </div>
 
-        <!-- Serial -->
         <div class="upload-box serial" id="serialBox" data-label="Сериен номер">
           <input type="text" id="serialInput" placeholder="Въведи сериен номер" />
           <button id="searchSerialButton">Проверка</button>
           <p id="serialStatus" class="status"></p>
         </div>
 
-        <!-- Hash -->
         <div class="upload-box hash" id="hashBox" data-label="HASH">
           <input type="text" id="hashInput" placeholder="Въведете Хеш на файла (SHA–256)" />
           <button id="searchHashButton">Проверка</button>
           <p id="hashStatus" class="status"></p>
         </div>
 
-        <!-- Result -->
         <div id="timestampResult" class="result-card hidden">
           <h3>Резултат</h3>
 
@@ -100,7 +93,6 @@
     </div>
   </section>
 
-  <!-- Scripts -->
   <script src="hash_search.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -110,14 +102,22 @@
       }
 
       const loggedIn = getCookie("loggedin") === "1";
-      const username = getCookie("username");
+      const firstName = getCookie("first_name");
+      const lastName = getCookie("last_name");
+      const fallbackUsername = getCookie("username");
       const toggle = document.getElementById("dropdownToggle");
       const menu = document.getElementById("dropdownMenu");
 
       if (!toggle || !menu) return;
 
-      if (loggedIn && username) {
-        toggle.innerHTML = `Здравей, ${username} ▾`;
+      if (loggedIn && firstName && lastName) {
+        toggle.innerHTML = `Здравей, ${firstName} ${lastName} ▾`;
+        menu.innerHTML = `
+          <a href="account.php">Моят профил</a>
+          <a href="logout.php">Изход</a>
+        `;
+      } else if (loggedIn && fallbackUsername) {
+        toggle.innerHTML = `Здравей, ${fallbackUsername} ▾`;
         menu.innerHTML = `
           <a href="account.php">Моят профил</a>
           <a href="logout.php">Изход</a>
@@ -144,5 +144,4 @@
     });
   </script>
 </body>
-
 </html>
