@@ -110,6 +110,21 @@ if ($code1 !== 0 || !file_exists($requestFile)) {
 // === 8. SEND TO TSA ===
 // Retrieve the TSA URL from a cookie or use the default
 $tsa_url = $_COOKIE['tsa_url'] ?? "http://freetsa.org/tsr";
+$tsa_type = 'free'; // default
+
+switch ($tsa_url) {
+    case 'http://@tsatest.b-trust.org':
+        $tsa_type = 'borica_test';
+        break;
+    case 'http://@tsa.b-trust.org':
+        $tsa_type = 'borica_prod';
+        break;
+    case 'http://freetsa.org/tsr':
+    default:
+        $tsa_type = 'free';
+        break;
+}
+
 
 exec("curl -s -S -H 'Content-Type: application/timestamp-query' --data-binary @" . escapeshellarg($requestFile) . " " . escapeshellarg($tsa_url) . " -o " . escapeshellarg($responseFile), $out2, $code2);
 
@@ -155,8 +170,9 @@ if (!$isAnonymous) {
 }
 
 // === 10. SAVE TO DB ===
-$stmt = $pdo->prepare("INSERT INTO timestamps (user_id, file_hash, timestamp, serial_number, file_name, uploader_name, uploader_email, uploader_phone, is_anonymous)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt = $pdo->prepare("INSERT INTO timestamps 
+    (user_id, file_hash, timestamp, serial_number, file_name, uploader_name, uploader_email, uploader_phone, is_anonymous, tsa_type)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
 $stmt->execute([
     $userId,
@@ -167,8 +183,10 @@ $stmt->execute([
     $uploaderName,
     $uploaderEmail,
     $uploaderPhone,
-    $isAnonymous ? 1 : 0
+    $isAnonymous ? 1 : 0,
+    $tsa_type
 ]);
+
 
 // === 11. SUCCESS RESPONSE ===
 echo json_encode([

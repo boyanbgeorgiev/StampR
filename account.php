@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// Check if the user is logged in
 if (!isset($_COOKIE['loggedin']) || $_COOKIE['loggedin'] !== "1") {
     header("Location: login.html");
     exit;
@@ -9,7 +8,6 @@ if (!isset($_COOKIE['loggedin']) || $_COOKIE['loggedin'] !== "1") {
 
 require 'db.php';
 
-// Get user ID from the cookie
 $userId = $_COOKIE['user_id'];
 
 // Fetch user details
@@ -20,12 +18,11 @@ $stmt->bind_result($username, $firstName, $lastName, $email, $phone);
 $stmt->fetch();
 $stmt->close();
 
-// Fetch files for the logged-in user
-$stmt = $conn->prepare("SELECT timestamp, serial_number, file_hash, file_name FROM timestamps WHERE user_id = ?");
+// Fetch files with TSA method
+$stmt = $conn->prepare("SELECT timestamp, serial_number, file_hash, file_name, tsa_type FROM timestamps WHERE user_id = ? ORDER BY timestamp DESC");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
-
 $files = $result->fetch_all(MYSQLI_ASSOC);
 
 // Mark public/private
@@ -34,6 +31,15 @@ foreach ($files as &$file) {
     $file['is_public'] = file_exists($filePath);
 }
 unset($file);
+
+// TSA type label formatter
+function formatTsaType($type) {
+    return match ($type) {
+        'borica_test' => 'Borica Test',
+        'borica_prod' => 'Borica Real',
+        default => 'Free TSA',
+    };
+}
 ?>
 <!DOCTYPE html>
 <html lang="bg">
@@ -42,9 +48,7 @@ unset($file);
     <title>Моят профил</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-        .file-toggle {
-            margin-bottom: 1em;
-        }
+        .file-toggle { margin-bottom: 1em; }
         .file-toggle button {
             margin-right: 0.5em;
             padding: 0.5em 1em;
@@ -101,10 +105,10 @@ unset($file);
 <section class="profile-section">
     <h2>Моят профил</h2>
     <div>
-        <p><strong>Потребителско име:</strong> <?php echo htmlspecialchars($username); ?></p>
-        <p><strong>Име:</strong> <?php echo htmlspecialchars($firstName . ' ' . $lastName); ?></p>
-        <p><strong>Имейл:</strong> <?php echo htmlspecialchars($email); ?></p>
-        <p><strong>Телефон:</strong> <?php echo htmlspecialchars($phone); ?></p>
+        <p><strong>Потребителско име:</strong> <?= htmlspecialchars($username) ?></p>
+        <p><strong>Име:</strong> <?= htmlspecialchars($firstName . ' ' . $lastName) ?></p>
+        <p><strong>Имейл:</strong> <?= htmlspecialchars($email) ?></p>
+        <p><strong>Телефон:</strong> <?= htmlspecialchars($phone) ?></p>
     </div>
 
     <h2>Моите удостоверени оригинали</h2>
@@ -121,20 +125,22 @@ unset($file);
                     <th>Име на оригинал</th>
                     <th>Сериен номер</th>
                     <th>Хеш на оригинал</th>
-                    <th>Дата и час на удостоверяване</th>
+                    <th>Дата и час</th>
+                    <th>Метод TSA</th>
                     <th>Действия</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($files as $file): ?>
-                    <tr class="<?php echo $file['is_public'] ? 'row-public' : 'row-private'; ?>">
-                        <td><?php echo htmlspecialchars($file['file_name']); ?></td>
-                        <td><?php echo htmlspecialchars($file['serial_number']); ?></td>
-                        <td><?php echo htmlspecialchars($file['file_hash']); ?></td>
-                        <td><?php echo htmlspecialchars($file['timestamp']); ?></td>
+                    <tr class="<?= $file['is_public'] ? 'row-public' : 'row-private'; ?>">
+                        <td><?= htmlspecialchars($file['file_name']) ?></td>
+                        <td><?= htmlspecialchars($file['serial_number']) ?></td>
+                        <td><?= htmlspecialchars($file['file_hash']) ?></td>
+                        <td><?= htmlspecialchars($file['timestamp']) ?></td>
+                        <td><?= htmlspecialchars(formatTsaType($file['tsa_type'])) ?></td>
                         <td>
                             <?php if ($file['is_public']): ?>
-                                <a href="uploads/<?php echo urlencode($file['file_name']); ?>" download>⬇️ Изтегли</a>
+                                <a href="download.php?file=<?= urlencode($file['file_name']) ?>">⬇️ Изтегли</a>
                             <?php else: ?>
                                 <em>Само удостоверен</em>
                             <?php endif; ?>
@@ -173,32 +179,23 @@ document.addEventListener("DOMContentLoaded", () => {
         return match ? decodeURIComponent(match[2]) : null;
     }
 
+    const toggle = document.getElementById("dropdownToggle");
+    const menu = document.getElementById("dropdownMenu");
+
     const loggedIn = getCookie("loggedin") === "1";
     const firstName = getCookie("first_name");
     const lastName = getCookie("last_name");
     const fallbackUsername = getCookie("username");
 
-    const toggle = document.getElementById("dropdownToggle");
-    const menu = document.getElementById("dropdownMenu");
-
     if (loggedIn && firstName && lastName) {
         toggle.innerHTML = `Здравей, ${firstName} ${lastName} ▾`;
-        menu.innerHTML = `
-            <a href="account.php">Моят профил</a>
-            <a href="logout.php">Изход</a>
-        `;
+        menu.innerHTML = `<a href="account.php">Моят профил</a><a href="logout.php">Изход</a>`;
     } else if (loggedIn && fallbackUsername) {
         toggle.innerHTML = `Здравей, ${fallbackUsername} ▾`;
-        menu.innerHTML = `
-            <a href="account.php">Моят профил</a>
-            <a href="logout.php">Изход</a>
-        `;
+        menu.innerHTML = `<a href="account.php">Моят профил</a><a href="logout.php">Изход</a>`;
     } else {
         toggle.innerHTML = "Акаунт ▾";
-        menu.innerHTML = `
-            <a href="login.html">Вход</a>
-            <a href="signup.html">Регистрация</a>
-        `;
+        menu.innerHTML = `<a href="login.html">Вход</a><a href="signup.html">Регистрация</a>`;
     }
 
     toggle.addEventListener("click", (e) => {
@@ -207,8 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.addEventListener("click", (e) => {
-        const dropdown = document.getElementById("userDropdown");
-        if (!dropdown.contains(e.target)) {
+        if (!document.getElementById("userDropdown").contains(e.target)) {
             menu.classList.remove("show");
         }
     });
@@ -219,24 +215,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const rowsPublic = document.querySelectorAll(".row-public");
     const rowsPrivate = document.querySelectorAll(".row-private");
 
-    function showPublic() {
+    btnPublic.addEventListener("click", () => {
         btnPublic.classList.add("active");
         btnPrivate.classList.remove("active");
         rowsPublic.forEach(row => row.style.display = "table-row");
         rowsPrivate.forEach(row => row.style.display = "none");
-    }
+    });
 
-    function showPrivate() {
+    btnPrivate.addEventListener("click", () => {
         btnPrivate.classList.add("active");
         btnPublic.classList.remove("active");
         rowsPrivate.forEach(row => row.style.display = "table-row");
         rowsPublic.forEach(row => row.style.display = "none");
-    }
+    });
 
-    btnPublic.addEventListener("click", showPublic);
-    btnPrivate.addEventListener("click", showPrivate);
-
-    showPublic();
+    btnPublic.click();
 
     // Developer mode
     const devPinInput = document.getElementById("devPin");
@@ -245,8 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveTsaUrlButton = document.getElementById("saveTsaUrl");
 
     enableDevModeButton.addEventListener("click", () => {
-        const pin = devPinInput.value;
-        if (pin === "1234") { // Replace with your secure PIN
+        if (devPinInput.value === "1234") {
             alert("Режим за разработчици активиран.");
             tsaUrlSelect.disabled = false;
             saveTsaUrlButton.disabled = false;
@@ -258,10 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("devModeForm").addEventListener("submit", (e) => {
         e.preventDefault();
         const selectedUrl = tsaUrlSelect.value;
-
-        // Set the TSA URL in a cookie
-        document.cookie = `tsa_url=${encodeURIComponent(selectedUrl)}; path=/; max-age=86400`; // Cookie valid for 1 day
-
+        document.cookie = `tsa_url=${encodeURIComponent(selectedUrl)}; path=/; max-age=86400`;
         alert(`TSA адресът е променен на: ${selectedUrl}`);
     });
 });
