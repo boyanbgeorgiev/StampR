@@ -1,13 +1,13 @@
 <?php
 require_once('tcpdf/tcpdf.php');
 require_once('phpqrcode/qrlib.php');
-require_once('db.php'); // Include your database connection
+require_once('db.php');
 
-// Получаване на данните от POST
-$timestamp   = $_POST['timestamp']   ?? null;
-$hash        = $_POST['hash']        ?? null;
-$serial      = $_POST['serial']      ?? null;
-$file_name   = $_POST['file_name']   ?? 'N/A';
+// Get POST data
+$timestamp = $_POST['timestamp'] ?? null;
+$hash = $_POST['hash'] ?? null;
+$serial = $_POST['serial'] ?? null;
+$file_name = $_POST['file_name'] ?? 'N/A';
 
 if (!$timestamp || !$hash || !$serial) {
     http_response_code(400);
@@ -15,8 +15,8 @@ if (!$timestamp || !$hash || !$serial) {
     exit;
 }
 
-// Query the database to get the `is_anonymous` value
-$stmt = $conn->prepare("SELECT is_anonymous, uploader_name, uploader_email, uploader_phone FROM timestamps WHERE file_hash = ?");
+// Get user info
+$stmt = $conn->prepare("SELECT is_anonymous, uploader_name, uploader_email, uploader_phone, tsa_type FROM timestamps WHERE file_hash = ?");
 $stmt->bind_param("s", $hash);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -24,93 +24,121 @@ $row = $result->fetch_assoc();
 
 if (!$row) {
     http_response_code(404);
-    echo "File not found in the database.";
+    echo "File not found.";
     exit;
 }
 
 $is_anonymous = $row['is_anonymous'];
-$uploader_name = $row['uploader_name'] ?? 'N/A';
-$uploader_email = $row['uploader_email'] ?? 'N/A';
-$uploader_phone = $row['uploader_phone'] ?? 'N/A';
+$nameParts = explode(" ", $row['uploader_name'] ?? 'Анонимен');
+$firstName = $nameParts[0] ?? 'N/A';
+$lastName = $nameParts[1] ?? '';
+$email = $row['uploader_email'] ?? 'N/A';
+$phone = $row['uploader_phone'] ?? 'N/A';
+$tsa_type = $row['tsa_type'] ?? 'Неизвестен';
 
-// Генериране на QR код (временен файл)
+// QR code
 $verifyURL = "https://stampr.eu/verify.php?serial=" . urlencode($serial);
 $tmpQR = tempnam(sys_get_temp_dir(), 'qr_') . '.png';
 QRcode::png($verifyURL, $tmpQR, QR_ECLEVEL_H, 4);
 
-// Създаване на нов PDF документ
+// PDF init
 $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
-
-// Настройки на документа
-$pdf->SetCreator(PDF_CREATOR);
-$pdf->SetAuthor('StampR');
-$pdf->SetTitle('Сертификат за времево удостоверение');
-$pdf->SetSubject('Сертификат');
-
-// Без хедър и футър
 $pdf->setPrintHeader(false);
 $pdf->setPrintFooter(false);
-
-// Маргини и автоматичен page break
-$pdf->SetMargins(20, 20, 20);
-$pdf->SetAutoPageBreak(TRUE, 20);
-
-// Добавяне на страница
+$pdf->SetMargins(25, 25, 25);
 $pdf->AddPage();
 
-// Лого (ако съществува)
+// === Title ===
+$pdf->SetFont('dejavusans', 'B', 16);
+$pdf->Cell(0, 10, 'СЕРТИФИКАТ ЗА ВРЕМЕВО УДОСТОВЕРЕНИЕ', 0, 1, 'L');
+
+// === Intro ===
+$pdf->SetFont('dejavusans', '', 11);
+$intro = "Този сертификат удостоверява, че лицето, подписало документа, е успешно верифицирано чрез платформата StampR и признато за упълномощено.
+С удостоверението се гарантира автентичността и непроменимостта на подписания файл, като се осигурява доказателство за валидността на самоличността на потребителя. Документът представлява официално доказателство за доверие и легитимност в подписаните на цифрово съдържание.";
+$pdf->MultiCell(0, 0, $intro, 0, 'L');
+$pdf->Ln(6);
+
+// === Info Fields ===
+$pdf->SetFont('dejavusans', 'B', 11);
+if ($is_anonymous) {
+    $pdf->Write(0, "Приносител: Анонимен");
+} else {
+    $pdf->Write(0, "Име: ");
+    $pdf->SetFont('dejavusans', '', 11);
+    $pdf->Write(0, $firstName);
+    $pdf->Ln(6);
+
+    $pdf->SetFont('dejavusans', 'B', 11);
+    $pdf->Write(0, "Фамилия: ");
+    $pdf->SetFont('dejavusans', '', 11);
+    $pdf->Write(0, $lastName);
+    $pdf->Ln(6);
+
+    $pdf->SetFont('dejavusans', 'B', 11);
+    $pdf->Write(0, "Имейл: ");
+    $pdf->SetFont('dejavusans', '', 11);
+    $pdf->Write(0, $email);
+    $pdf->Ln(6);
+
+    $pdf->SetFont('dejavusans', 'B', 11);
+    $pdf->Write(0, "Телефон: ");
+    $pdf->SetFont('dejavusans', '', 11);
+    $pdf->Write(0, $phone);
+    $pdf->Ln(6);
+}
+
+// File name
+$pdf->SetFont('dejavusans', 'B', 11);
+$pdf->Write(0, "Име на файла: ");
+$pdf->SetFont('dejavusans', '', 11);
+$pdf->Write(0, $file_name);
+$pdf->Ln(6);
+
+// Hash
+$pdf->SetFont('dejavusans', 'B', 11);
+$pdf->Write(0, "HASH: ");
+$pdf->SetFont('dejavusans', '', 11);
+$pdf->Write(0, $hash);
+$pdf->Ln(6);
+
+// Serial number
+$pdf->SetFont('dejavusans', 'B', 11);
+$pdf->Write(0, "Сериен номер: ");
+$pdf->SetFont('dejavusans', '', 11);
+$pdf->Write(0, $serial);
+$pdf->Ln(6);
+
+// Timestamp
+$pdf->SetFont('dejavusans', 'B', 11);
+$pdf->Write(0, "Време: ");
+$pdf->SetFont('dejavusans', '', 11);
+$pdf->Write(0, $timestamp);
+$pdf->Ln(10);
+
+// === QR code + link ===
+$pdf->Image($tmpQR, $pdf->GetX(), $pdf->GetY(), 50, 50);
+$pdf->Ln(55);
+
+$pdf->SetFont('dejavusans', 'I', 10);
+$pdf->Write(0, "Сертификатът може да бъде проверен и на страницата на StampR:");
+$pdf->Ln(5);
+$pdf->SetTextColor(0, 0, 255);
+$pdf->Write(0, $verifyURL, $verifyURL);
+$pdf->SetTextColor(0, 0, 0);
+$pdf->Ln(15);
+
+// === StampR Logo bottom right ===
 $logoFile = 'logo.png';
 if (file_exists($logoFile)) {
-    $pdf->Image($logoFile, 20, 10, 30, 30);
-} else {
-    $pdf->SetFont('dejavusans', 'B', 16);
-    $pdf->SetXY(20, 10);
-    $pdf->Cell(30, 30, 'LOGO', 1, 0, 'C', 0, '', 0);
+    $pdf->Image($logoFile, 155, 250, 35); // Adjust as needed
 }
 
-// Заглавие
-$pdf->SetFont('dejavusans', 'B', 20);
-$pdf->Ln(35);
-$pdf->Cell(0, 10, 'СЕРТИФИКАТ ЗА ВРЕМЕВО УДОСТОВЕРЕНИЕ', 0, 1, 'C');
-
-// Линия под заглавието
-$pdf->SetLineWidth(0.5);
-$pdf->Line(20, $pdf->GetY(), $pdf->getPageWidth() - 20, $pdf->GetY());
-$pdf->Ln(5);
-
-// Описание
-$pdf->SetFont('dejavusans', '', 12);
-$certificateText = "Този сертификат удостоверява, че лицето, подписало документа, е успешно верифицирано чрез платформата StampR и признато за упълномощено. С удостоверението се гарантира автентичността и непроменимостта на подписания файл, като се осигурява доказателство за валидността на самоличността на потребителя.";
-$pdf->MultiCell(0, 0, $certificateText, 0, 'J', false, 1, '', '', true);
-$pdf->Ln(5);
-
-// Детайли
-if ($is_anonymous) {
-    $userDetails = "Приносител: Анонимен";
-} else {
-    $userDetails = "Име: $uploader_name\nИмейл: $uploader_email\nТелефон: $uploader_phone";
-}
-
-$details = "$userDetails\nИме на файла: $file_name\n\nHASH: $hash\nСериен номер: $serial\nВреме: $timestamp";
-$pdf->MultiCell(0, 0, $details, 0, 'L', false, 1, '', '', true);
-$pdf->Ln(5);
-
-// QR код
-$currentX = $pdf->GetX();
-$currentY = $pdf->GetY();
-$pdf->Image($tmpQR, $currentX, $currentY, 40, 40);
-
-// Линк за проверка
-$pdf->SetXY($currentX, $currentY + 42);
-$pdf->SetFont('dejavusans', 'I', 10);
-$pdf->Write(0, "Провери сертификата тук:\n$verifyURL");
-
-// Изтриване на временния QR файл
+// Cleanup
 register_shutdown_function(function () use ($tmpQR) {
     @unlink($tmpQR);
 });
 
-// Изход
 $pdf->Output("certificate-$serial.pdf", 'I');
 exit;
 ?>
